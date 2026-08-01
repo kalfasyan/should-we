@@ -1,0 +1,20 @@
+[workspace]
+authors = ["Yannis Kalfas <ikalfas@protonmail.com>"]
+channels = ["conda-forge"]
+name = "should_we_buy"
+platforms = ["osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+app = "PYTHONPATH=src python -m should_we_buy"
+new = "PYTHONPATH=src python -m should_we_buy new"
+list = "PYTHONPATH=src python -m should_we_buy list"
+show = "PYTHONPATH=src python -m should_we_buy show"
+reprocess = "PYTHONPATH=src python -m should_we_buy reprocess"
+setup = "PYTHONPATH=src python -m should_we_buy setup"
+
+[dependencies]
+python = "3.13.*"
+
+[pypi-dependencies]
+# none yet; add with: pixi add --pypi <package>

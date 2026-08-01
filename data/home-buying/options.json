@@ -1,0 +1,345 @@
+[
+  {
+    "name": "place-a",
+    "scores": {
+      "Alice": {
+        "price": 4.0,
+        "will_to_buy": 3.0,
+        "proximity_coffee": 2.0,
+        "proximity_groceries": 2.0,
+        "proximity_restaurants": 3.0,
+        "proximity_station": 3.0,
+        "proximity_center": 2.0,
+        "proximity_nature": 5.0,
+        "energy_cost_efficiency": 3.0,
+        "ease_of_cleaning": 2.0,
+        "balcony_terrace": 3.0,
+        "garden": 0.0,
+        "parking": 5.0,
+        "natural_light": 5.0,
+        "large_surface_area": 5.0,
+        "future_renovation_need": 5.0,
+        "storage_space": 5.0,
+        "lifestyle_change": 1.0
+      },
+      "Bob": {
+        "price": 4.0,
+        "will_to_buy": 3.0,
+        "proximity_coffee": 2.0,
+        "proximity_groceries": 2.0,
+        "proximity_restaurants": 3.0,
+        "proximity_station": 3.0,
+        "proximity_center": 2.0,
+        "proximity_nature": 5.0,
+        "energy_cost_efficiency": 3.0,
+        "ease_of_cleaning": 2.0,
+        "balcony_terrace": 3.0,
+        "garden": 0.0,
+        "parking": 5.0,
+        "natural_light": 5.0,
+        "large_surface_area": 5.0,
+        "future_renovation_need": 5.0,
+        "storage_space": 5.0,
+        "lifestyle_change": 1.0
+      }
+    },
+    "breakdown": {
+      "Alice": 3.1071,
+      "Bob": 3.1667
+    }
+  },
+  {
+    "name": "place-b",
+    "scores": {
+      "Alice": {
+        "price": 0.0,
+        "will_to_buy": 1.0,
+        "proximity_coffee": 3.0,
+        "proximity_groceries": 5.0,
+        "proximity_restaurants": 3.0,
+        "proximity_station": 4.0,
+        "proximity_center": 3.0,
+        "proximity_nature": 3.0,
+        "energy_cost_efficiency": 2.0,
+        "ease_of_cleaning": 5.0,
+        "balcony_terrace": 3.0,
+        "garden": 0.0,
+        "parking": 4.0,
+        "natural_light": 5.0,
+        "large_surface_area": 3.0,
+        "future_renovation_need": 0.0,
+        "storage_space": 3.0,
+        "lifestyle_change": 3.0
+      },
+      "Bob": {
+        "price": 0.0,
+        "will_to_buy": 1.0,
+        "proximity_coffee": 3.0,
+        "proximity_groceries": 5.0,
+        "proximity_restaurants": 3.0,
+        "proximity_station": 4.0,
+        "proximity_center": 3.0,
+        "proximity_nature": 3.0,
+        "energy_cost_efficiency": 2.0,
+        "ease_of_cleaning": 5.0,
+        "balcony_terrace": 3.0,
+        "garden": 0.0,
+        "parking": 4.0,
+        "natural_light": 5.0,
+        "large_surface_area": 3.0,
+        "future_renovation_need": 0.0,
+        "storage_space": 3.0,
+        "lifestyle_change": 3.0
+      }
+    },
+    "breakdown": {
+      "Alice": 2.4107,
+      "Bob": 2.9394
+    }
+  },
+  {
+    "name": "place-c",
+    "scores": {
+      "Alice": {
+        "price": 3.0,
+        "will_to_buy": 1.0,
+        "proximity_coffee": 0.0,
+        "proximity_groceries": 0.0,
+        "proximity_restaurants": 1.0,
+        "proximity_station": 0.0,
+        "proximity_center": 0.0,
+        "proximity_nature": 5.0,
+        "energy_cost_efficiency": 4.0,
+        "ease_of_cleaning": 3.0,
+        "balcony_terrace": 5.0,
+        "garden": 5.0,
+        "parking": 5.0,
+        "natural_light": 5.0,
+        "large_surface_area": 5.0,
+        "future_renovation_need": 5.0,
+        "storage_space": 5.0,
+        "lifestyle_change": 0.0
+      },
+      "Bob": {
+        "price": 3.0,
+        "will_to_buy": 1.0,
+        "proximity_coffee": 0.0,
+        "proximity_groceries": 0.0,
+        "proximity_restaurants": 1.0,
+        "proximity_station": 0.0,
+        "proximity_center": 0.0,
+        "proximity_nature": 5.0,
+        "energy_cost_efficiency": 4.0,
+        "ease_of_cleaning": 3.0,
+        "balcony_terrace": 5.0,
+        "garden": 5.0,
+        "parking": 5.0,
+        "natural_light": 5.0,
+        "large_surface_area": 5.0,
+        "future_renovation_need": 5.0,
+        "storage_space": 5.0,
+        "lifestyle_change": 0.0
+      }
+    },
+    "breakdown": {
+      "Alice": 2.6964,
+      "Bob": 2.6212
+    }
+  },
+  {
+    "name": "place-d",
+    "scores": {
+      "Alice": {
+        "price": 0.0,
+        "will_to_buy": 5.0,
+        "proximity_coffee": 5.0,
+        "proximity_groceries": 5.0,
+        "proximity_restaurants": 5.0,
+        "proximity_station": 4.0,
+        "proximity_center": 5.0,
+        "proximity_nature": 2.0,
+        "energy_cost_efficiency": 5.0,
+        "ease_of_cleaning": 5.0,
+        "balcony_terrace": 4.0,
+        "garden": 0.0,
+        "parking": 4.0,
+        "natural_light": 5.0,
+        "large_surface_area": 5.0,
+        "future_renovation_need": 5.0,
+        "storage_space": 4.0,
+        "lifestyle_change": 5.0
+      },
+      "Bob": {
+        "price": 0.0,
+        "will_to_buy": 5.0,
+        "proximity_coffee": 5.0,
+        "proximity_groceries": 5.0,
+        "proximity_restaurants": 5.0,
+        "proximity_station": 4.0,
+        "proximity_center": 5.0,
+        "proximity_nature": 2.0,
+        "energy_cost_efficiency": 5.0,
+        "ease_of_cleaning": 5.0,
+        "balcony_terrace": 4.0,
+        "garden": 0.0,
+        "parking": 4.0,
+        "natural_light": 5.0,
+        "large_surface_area": 5.0,
+        "future_renovation_need": 5.0,
+        "storage_space": 4.0,
+        "lifestyle_change": 5.0
+      }
+    },
+    "breakdown": {
+      "Alice": 3.8929,
+      "Bob": 4.1061
+    }
+  },
+  {
+    "name": "place-e",
+    "scores": {
+      "Alice": {
+        "price": 2.0,
+        "will_to_buy": 1.0,
+        "proximity_coffee": 3.0,
+        "proximity_groceries": 3.0,
+        "proximity_restaurants": 3.0,
+        "proximity_station": 3.0,
+        "proximity_center": 2.0,
+        "proximity_nature": 5.0,
+        "energy_cost_efficiency": 5.0,
+        "ease_of_cleaning": 5.0,
+        "balcony_terrace": 5.0,
+        "garden": 0.0,
+        "parking": 4.0,
+        "natural_light": 5.0,
+        "large_surface_area": 2.0,
+        "future_renovation_need": 3.0,
+        "storage_space": 4.0,
+        "lifestyle_change": 2.0
+      },
+      "Bob": {
+        "price": 2.0,
+        "will_to_buy": 1.0,
+        "proximity_coffee": 3.0,
+        "proximity_groceries": 3.0,
+        "proximity_restaurants": 3.0,
+        "proximity_station": 3.0,
+        "proximity_center": 2.0,
+        "proximity_nature": 5.0,
+        "energy_cost_efficiency": 5.0,
+        "ease_of_cleaning": 5.0,
+        "balcony_terrace": 5.0,
+        "garden": 0.0,
+        "parking": 4.0,
+        "natural_light": 5.0,
+        "large_surface_area": 2.0,
+        "future_renovation_need": 3.0,
+        "storage_space": 4.0,
+        "lifestyle_change": 2.0
+      }
+    },
+    "breakdown": {
+      "Alice": 2.9821,
+      "Bob": 3.2424
+    }
+  },
+  {
+    "name": "place-f",
+    "scores": {
+      "Alice": {
+        "price": 1.0,
+        "will_to_buy": 5.0,
+        "proximity_coffee": 4.0,
+        "proximity_groceries": 4.0,
+        "proximity_restaurants": 4.0,
+        "proximity_station": 5.0,
+        "proximity_center": 4.0,
+        "proximity_nature": 2.0,
+        "energy_cost_efficiency": 4.0,
+        "ease_of_cleaning": 2.0,
+        "balcony_terrace": 4.0,
+        "garden": 0.0,
+        "parking": 0.0,
+        "natural_light": 5.0,
+        "large_surface_area": 5.0,
+        "future_renovation_need": 4.0,
+        "storage_space": 5.0,
+        "lifestyle_change": 4.0
+      },
+      "Bob": {
+        "price": 1.0,
+        "will_to_buy": 5.0,
+        "proximity_coffee": 4.0,
+        "proximity_groceries": 4.0,
+        "proximity_restaurants": 4.0,
+        "proximity_station": 5.0,
+        "proximity_center": 4.0,
+        "proximity_nature": 2.0,
+        "energy_cost_efficiency": 4.0,
+        "ease_of_cleaning": 2.0,
+        "balcony_terrace": 4.0,
+        "garden": 0.0,
+        "parking": 0.0,
+        "natural_light": 5.0,
+        "large_surface_area": 5.0,
+        "future_renovation_need": 4.0,
+        "storage_space": 5.0,
+        "lifestyle_change": 4.0
+      }
+    },
+    "breakdown": {
+      "Alice": 3.25,
+      "Bob": 3.4697
+    }
+  },
+  {
+    "name": "place-g",
+    "scores": {
+      "Alice": {
+        "price": 1.0,
+        "will_to_buy": 3.0,
+        "proximity_coffee": 5.0,
+        "proximity_groceries": 5.0,
+        "proximity_restaurants": 5.0,
+        "proximity_station": 3.0,
+        "proximity_center": 5.0,
+        "proximity_nature": 3.0,
+        "energy_cost_efficiency": 5.0,
+        "ease_of_cleaning": 5.0,
+        "balcony_terrace": 5.0,
+        "garden": 0.0,
+        "parking": 5.0,
+        "natural_light": 5.0,
+        "large_surface_area": 2.0,
+        "future_renovation_need": 4.0,
+        "storage_space": 3.0,
+        "lifestyle_change": 5.0
+      },
+      "Bob": {
+        "price": 1.0,
+        "will_to_buy": 3.0,
+        "proximity_coffee": 5.0,
+        "proximity_groceries": 5.0,
+        "proximity_restaurants": 5.0,
+        "proximity_station": 3.0,
+        "proximity_center": 5.0,
+        "proximity_nature": 3.0,
+        "energy_cost_efficiency": 5.0,
+        "ease_of_cleaning": 5.0,
+        "balcony_terrace": 5.0,
+        "garden": 0.0,
+        "parking": 5.0,
+        "natural_light": 5.0,
+        "large_surface_area": 2.0,
+        "future_renovation_need": 4.0,
+        "storage_space": 3.0,
+        "lifestyle_change": 5.0
+      }
+    },
+    "breakdown": {
+      "Alice": 3.8214,
+      "Bob": 4.0
+    }
+  }
+]

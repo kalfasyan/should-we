@@ -1,0 +1,125 @@
+{
+  "project_name": "home-buying",
+  "features": [
+    {
+      "key": "price",
+      "label": "Price"
+    },
+    {
+      "key": "will_to_buy",
+      "label": "Will to buy"
+    },
+    {
+      "key": "proximity_coffee",
+      "label": "Proximity to coffee"
+    },
+    {
+      "key": "proximity_groceries",
+      "label": "Proximity to groceries"
+    },
+    {
+      "key": "proximity_restaurants",
+      "label": "Proximity to restaurants"
+    },
+    {
+      "key": "proximity_station",
+      "label": "Proximity to station"
+    },
+    {
+      "key": "proximity_center",
+      "label": "Proximity to center"
+    },
+    {
+      "key": "proximity_nature",
+      "label": "Proximity to Nature"
+    },
+    {
+      "key": "energy_cost_efficiency",
+      "label": "Energy cost/efficiency"
+    },
+    {
+      "key": "ease_of_cleaning",
+      "label": "Ease of cleaning"
+    },
+    {
+      "key": "balcony_terrace",
+      "label": "Balcony/Terrace"
+    },
+    {
+      "key": "garden",
+      "label": "Garden"
+    },
+    {
+      "key": "parking",
+      "label": "Parking"
+    },
+    {
+      "key": "natural_light",
+      "label": "Natural light"
+    },
+    {
+      "key": "large_surface_area",
+      "label": "Large surface area"
+    },
+    {
+      "key": "future_renovation_need",
+      "label": "Future renovation need"
+    },
+    {
+      "key": "storage_space",
+      "label": "Storage space"
+    },
+    {
+      "key": "lifestyle_change",
+      "label": "Lifestyle change"
+    }
+  ],
+  "evaluators": [
+    {
+      "name": "Alice",
+      "weights": {
+        "price": 5,
+        "will_to_buy": 5,
+        "proximity_coffee": 4,
+        "proximity_groceries": 3,
+        "proximity_restaurants": 2,
+        "proximity_station": 2,
+        "proximity_center": 3,
+        "proximity_nature": 3,
+        "energy_cost_efficiency": 2,
+        "ease_of_cleaning": 2,
+        "balcony_terrace": 4,
+        "garden": 3,
+        "parking": 4,
+        "natural_light": 1,
+        "large_surface_area": 0,
+        "future_renovation_need": 5,
+        "storage_space": 3,
+        "lifestyle_change": 5
+      }
+    },
+    {
+      "name": "Bob",
+      "weights": {
+        "price": 5,
+        "will_to_buy": 5,
+        "proximity_coffee": 4,
+        "proximity_groceries": 5,
+        "proximity_restaurants": 4,
+        "proximity_station": 4,
+        "proximity_center": 3,
+        "proximity_nature": 3,
+        "energy_cost_efficiency": 3,
+        "ease_of_cleaning": 4,
+        "balcony_terrace": 5,
+        "garden": 2,
+        "parking": 4,
+        "natural_light": 5,
+        "large_surface_area": 2,
+        "future_renovation_need": 2,
+        "storage_space": 2,
+        "lifestyle_change": 4
+      }
+    }
+  ]
+}
