@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import csv
-import html
 import io
 import json
 import os
@@ -278,18 +277,6 @@ def _results_list(project: str, config: ScoringConfig, *, readonly: bool = False
         ui.timer(5.0, lambda: _vote_status.refresh())
 
 
-def _heatmap_tooltip(names, ev_names, opts) -> str:
-    notes = {o.name: html.escape(o.notes) for o in opts if o.notes}
-    return (
-        "(function(params){"
-        f"var names={json.dumps(names)};var evs={json.dumps(ev_names)};"
-        f"var notes={json.dumps(notes)};"
-        "var p=params[0].data;var opt=names[p[0]];var person=evs[p[1]];"
-        "var note=notes[opt]||'';"
-        "return opt+'<br>'+person+': '+p[2]+(note?'<br>'+note:'');})"
-    )
-
-
 def _charts_body(sorted_opts, config: ScoringConfig) -> None:
     names = [o.name for o in sorted_opts]
     with ui.column().classes("w-full gap-2 mb-4"):
@@ -308,15 +295,21 @@ def _charts_body(sorted_opts, config: ScoringConfig) -> None:
             }
         ).classes("w-full h-64")
         ev_names = [e.name for e in config.evaluators]
+        # ponytail: cell "name" carries option · person — note; echarts shows it
+        # in the default tooltip as "name : score" (formatter functions can't be
+        # serialized into NiceGUI's JSON chart options)
         heat = []
         for oi, opt in enumerate(sorted_opts):
             for ei, ev in enumerate(config.evaluators):
                 v = opt.breakdown.get(ev.name)
                 if v is not None:
-                    heat.append([oi, ei, round(v, 3)])
+                    cell = f"{opt.name} · {ev.name}"
+                    if opt.notes:
+                        cell += f" — {opt.notes}"
+                    heat.append({"value": [oi, ei, round(v, 3)], "name": cell})
         ui.echart(
             {
-                "tooltip": {"formatter": _heatmap_tooltip(names, ev_names, sorted_opts)},
+                "tooltip": {},
                 "grid": {"left": 80, "right": 16, "top": 30, "bottom": 80},
                 "xAxis": {"type": "category", "data": names, "axisLabel": {"rotate": 30}},
                 "yAxis": {"type": "category", "data": ev_names},
