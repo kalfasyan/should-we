@@ -2,6 +2,10 @@
 
 Rank options (homes, cars, vacation spots, etc.) based on N evaluators' weighted opinions on user-defined features.
 
+### Prerequisites
+
+Install [pixi](https://pixi.prefix.dev/latest/installation/), then clone this repo.
+
 ### Quick start (pixi)
 
 - **Set up a project** (interactive wizard):

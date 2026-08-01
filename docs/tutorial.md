@@ -1,5 +1,7 @@
 # Tutorial — Score Your First Thing
 
+First, [install pixi](https://pixi.prefix.dev/latest/installation/).
+
 Let's rank something. Could be a house, a car, a vacation spot — anything you
 and someone else need to agree on.
 
