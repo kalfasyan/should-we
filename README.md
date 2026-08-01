@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/assets/logo.png" alt="should-we-buy logo" width="256"></p>
+
 ## should-we-buy — Generic Weighted Ranking CLI
 
 Rank options (homes, cars, vacation spots, etc.) when multiple people need to agree.
