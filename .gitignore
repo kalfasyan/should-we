@@ -214,8 +214,8 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-# Personal data — keep out of version control
-data/config_yn.json
-data/options_yn.json
-data/homes.json
-data/car/
+# Runtime project data — created on demand (joining, voting, new projects).
+# Keep only the example project and the directory placeholder.
+data/*
+!data/.gitkeep
+!data/home-buying/

@@ -452,10 +452,16 @@ def vote_page(project: str, token: str):
         with ui.row().classes("items-center gap-3"):
             ui.label(f"{config.project_name} — vote").classes("text-h6")
             ui.label(f"voting as {evaluator}").classes("text-caption")
-        ui.button(
-            "See current results",
-            on_click=lambda: ui.navigate.to(f"/results/{project}"),
-        ).props("outline")
+        with ui.row().classes("gap-2"):
+            ui.button(
+                "See current results",
+                on_click=lambda: ui.navigate.to(f"/results/{project}"),
+            ).props("outline")
+            ui.button(
+                "See rankings",
+                icon="leaderboard",
+                on_click=lambda: ui.navigate.to(f"/?project={project}&tab=rankings"),
+            )
 
     with ui.column().classes("w-full max-w-3xl mx-auto px-4 py-4"):
         _vote_body(project, config, evaluator)
@@ -638,6 +644,11 @@ def results_page(project: str):
         return
     with ui.header(elevated=True).classes("items-center justify-between px-4"):
         ui.label(f"{config.project_name} — results").classes("text-h6")
+        ui.button(
+            "See rankings",
+            icon="leaderboard",
+            on_click=lambda: ui.navigate.to(f"/?project={project}&tab=rankings"),
+        ).props("outline")
     with ui.column().classes("w-full max-w-4xl mx-auto px-4 py-4"):
         _results_list(project, config, readonly=True)
 
@@ -648,6 +659,14 @@ def index():
 
     ui.dark_mode().enable()
     _init_state()
+    try:
+        q = ui.context.client.request.query_params
+    except Exception:
+        q = {}
+    projects = list_projects()
+    if projects and q.get("project") in projects:
+        _project_key = q["project"]
+        _config = load_config(_project_key)
 
     with ui.header(elevated=True).classes("items-center justify-between px-4"):
         with ui.row().classes("items-center gap-3"):
@@ -682,7 +701,8 @@ def index():
             tab_setup = ui.tab("Setup")
             tab_rankings = ui.tab("Rankings")
 
-        with ui.tab_panels(tabs, value=tab_setup) as panels:
+        default_tab = tab_rankings if q.get("tab") == "rankings" else tab_setup
+        with ui.tab_panels(tabs, value=default_tab) as panels:
             _panels = panels
             _tab_rankings = tab_rankings
             with ui.tab_panel(tab_setup):
