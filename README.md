@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/assets/logo.png" alt="should-we logo" width="256"></p>
+<p align="center"><img src="src/should_we/assets/logo.png" alt="should-we logo" width="256"></p>
 
 <h1 align="center">should-we</h1>
 

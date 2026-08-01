@@ -1,0 +1,11 @@
+{
+  "name": "should-we",
+  "short_name": "should-we",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#121212",
+  "icons": [
+    { "src": "/assets/logo.png", "sizes": "1024x1024", "type": "image/png" }
+  ]
+}

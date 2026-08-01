@@ -8,6 +8,9 @@ dependencies = [
     "nicegui",
 ]
 
+[tool.setuptools.package-data]
+should_we = ["assets/*"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py313"
