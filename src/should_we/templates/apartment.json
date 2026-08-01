@@ -1,0 +1,25 @@
+{
+  "project_name": "Apartment hunt",
+  "features": [
+    {
+      "key": "price",
+      "label": "Price"
+    },
+    {
+      "key": "location",
+      "label": "Location"
+    },
+    {
+      "key": "size",
+      "label": "Size"
+    },
+    {
+      "key": "condition",
+      "label": "Condition"
+    },
+    {
+      "key": "commute",
+      "label": "Commute"
+    }
+  ]
+}

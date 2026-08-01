@@ -1,0 +1,25 @@
+{
+  "project_name": "Vacation",
+  "features": [
+    {
+      "key": "price",
+      "label": "Price"
+    },
+    {
+      "key": "weather",
+      "label": "Weather"
+    },
+    {
+      "key": "activities",
+      "label": "Activities"
+    },
+    {
+      "key": "food",
+      "label": "Food"
+    },
+    {
+      "key": "travel_time",
+      "label": "Travel time"
+    }
+  ]
+}

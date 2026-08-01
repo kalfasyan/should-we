@@ -12,7 +12,8 @@ We'll do this in 3 steps:
 3. See who wins
 
 > **Tip — web UI:** don't like the terminal? Run `pixi run ui` for a
-> dark-mode web app that does everything below with a few clicks.
+> dark-mode web app that does everything below with a few clicks — see
+> [Web UI walkthrough](#web-ui-walkthrough).
 
 ---
 
@@ -207,6 +208,30 @@ Combined: 4.092
 
 ---
 
+## Web UI Walkthrough
+
+The web app (`pixi run ui`) replaces the terminal flow with a few clicks and
+adds charts:
+
+1. **Setup tab** — type a project name and feature labels, or pick a
+   template (apartment, car, laptop, vacation). Save Config.
+2. **Share the link** — a "Project ready!" dialog appears with the join
+   link. Copy it and send it to the group.
+3. **Everyone joins** — the join link asks for a name, then drops them on
+   their voting page: sliders for how much each feature matters to them,
+   then an "Add an option" box with an optional link/note, and rating
+   sliders (0–5, step 0.5) per option. Duplicate option names are blocked;
+   links/notes can be edited per option via "Save note".
+4. **Rankings tab** — bar chart of combined scores and an
+   options×people heatmap at the top (hover a cell for the score and note;
+   a missing cell means that person hasn't voted). Below, the ranked list
+   shows ✅/⏳ next to each person per option, and a 🤔 tag when people
+   disagree strongly (standard deviation ≥ 1.5).
+5. **Share results** — a read-only results page at `/results/<project>`
+   shows the charts without the editing controls.
+
+---
+
 ## Starting a New Project
 
 Run `pixi run setup` again. Each project lives in its own subdirectory
@@ -252,5 +277,7 @@ by hand — they're plain JSON.
 **Scoring**: `(score × weight) for each feature ÷ total weight` per evaluator,
 then average everyone's results.
 
-**Data**: each project in `data/{project}/config.json` and
-`data/{project}/options.json`. Plain JSON. Edit, share, version-control.
+**Data**: each project in `data/{project}/config.json` (features, people,
+tokens), `data/{project}/options.json` (scores, breakdowns, per-option
+notes), and `data/{project}/votes.json` (who has voted). Plain JSON. Edit,
+share, version-control.

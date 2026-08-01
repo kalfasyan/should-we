@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/assets/logo.png" alt="should-we logo" width="180"></p>
+<p align="center"><img src="docs/assets/logo.png" alt="should-we logo" width="256"></p>
 
 <h1 align="center">should-we</h1>
 
@@ -26,10 +26,16 @@ web UI, your call.
 
 ## Features
 
-- **Multi-person weighted scoring** — each evaluator defines personal feature weights
+- **Multi-person weighted scoring** — each person decides how much each feature matters to them
+- **One join link** — everyone picks a name, sets their weights, adds options, and votes from their own phone
 - **0–5 scoring scale** — same ratings for everyone, weighted per person
+- **Comparison charts** — bar chart of combined scores plus an options×people heatmap (missing cell = hasn't voted yet)
+- **Notes & links per option** — add a link or note next to any option, shown in the heatmap tooltip
+- **Disagreement marker** — options with widely split opinions are flagged in the rankings
+- **Templates** — one-click project start for apartments, cars, vacations, laptops
 - **CLI + web UI** — dark-mode NiceGUI app (`pixi run ui`) with the same functionality
 - **JSON on disk** — projects are plain files under `data/`; edit and `reprocess`
+- **CSV export + read-only results page** — share or download the outcome
 
 ## Quick start (pixi)
 
@@ -90,9 +96,10 @@ place-c  (combined=2.659)
 
 ## Scoring model
 
-For each option, every evaluator rates each feature (0–5). Their personal
+For each option, every person rates each feature (0–5). Their personal
 weights decide how much each feature counts. The combined score is the
-average of all evaluators.
+average of everyone who voted on that option (people who haven't voted or
+haven't set weights don't count).
 
 Alice (cares about Color, w=5) and Bob (cares about Price/Eco, w=5):
 
@@ -109,6 +116,29 @@ Alice (cares about Color, w=5) and Bob (cares about Price/Eco, w=5):
 **Combined**: (2.333 + 4.000) / 2 = **3.167**
 
 Full walkthrough: [docs/tutorial.md](docs/tutorial.md).
+
+## Host it
+
+Your whole group can vote from their own phones, no installs, no accounts:
+the owner sets up the project and shares the join link. Everyone picks a
+name, sets how much each feature matters to them (sliders), then adds
+options and rates them with sliders — the vote-status line in Rankings
+updates live, and charts refresh on any reload.
+
+```bash
+docker build -t should-we .
+docker run -d -p 8080:8080 -v $(pwd)/data:/app/data should-we
+```
+
+Or with compose (same result, rebuilds as needed):
+
+```bash
+docker compose up -d
+```
+
+- Data lives in `data/` on the host (volume). `SHOULD_WE_DATA` overrides it; `SHOULD_WE_HOST` sets the bind address (default `127.0.0.1`).
+- Serve behind HTTPS — voting links are bearer secrets (like password reset links). Regenerate a link to revoke it.
+- Read-only results page: `/results/<project>` (no token needed).
 
 ## Configuration
 
@@ -130,8 +160,8 @@ Each project lives in its own subdirectory under `data/`
 ```
 
 - `features`: order matters for prompting. `key` is the machine identifier, `label` is shown to the user.
-- `evaluators`: one per person. `weights` map feature keys to importance (0 = irrelevant, 5 = critical).
-- Every evaluator must have a weight for every feature.
+- `evaluators`: one per person, created when they join via the join link. `weights` map feature keys to importance (0 = irrelevant, 5 = critical) and are set by each person on their voting page.
+- `voting_tokens` / `join_token`: per-person and per-project secrets for the links.
 
 Options live in `data/{project}/options.json` — edit by hand, then `pixi run reprocess`.
 

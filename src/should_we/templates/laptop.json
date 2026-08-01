@@ -1,0 +1,25 @@
+{
+  "project_name": "New laptop",
+  "features": [
+    {
+      "key": "price",
+      "label": "Price"
+    },
+    {
+      "key": "performance",
+      "label": "Performance"
+    },
+    {
+      "key": "battery",
+      "label": "Battery life"
+    },
+    {
+      "key": "weight",
+      "label": "Weight"
+    },
+    {
+      "key": "screen",
+      "label": "Screen"
+    }
+  ]
+}

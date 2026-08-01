@@ -121,5 +121,10 @@
         "lifestyle_change": 4
       }
     }
-  ]
+  ],
+  "voting_tokens": {
+    "Alice": "UG4b_0vX_DU4GAk7",
+    "Bob": "2fcQ0PYZIv1YKDDf"
+  },
+  "join_token": "gvzeyQaWSlfouEEy"
 }

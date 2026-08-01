@@ -3,8 +3,9 @@ from __future__ import annotations
 import json
 import os
 import re
+import secrets
 import shutil
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 
@@ -29,6 +30,8 @@ class ScoringConfig:
     project_name: str
     features: list[Feature]
     evaluators: list[Evaluator]
+    voting_tokens: dict[str, str] = field(default_factory=dict)
+    join_token: str | None = None
 
 
 def _label_to_key(label: str) -> str:
@@ -84,33 +87,71 @@ def load_config(project: str | None = None) -> ScoringConfig:
         Evaluator(name=e["name"], weights=e.get("weights", {})) for e in raw["evaluators"]
     ]
 
-    _validate_config(features, evaluators)
     return ScoringConfig(
         project_name=raw.get("project_name", project),
         features=features,
         evaluators=evaluators,
+        voting_tokens=raw.get("voting_tokens", {}),
+        join_token=raw.get("join_token"),
     )
 
 
 def save_config(config: ScoringConfig, project: str | None = None) -> None:
     project = project or _label_to_key(config.project_name)
     cfg_path, _ = project_paths(project)
-    _validate_config(config.features, config.evaluators)
     data = {
         "project_name": config.project_name,
         "features": [{"key": f.key, "label": f.label} for f in config.features],
         "evaluators": [{"name": e.name, "weights": e.weights} for e in config.evaluators],
+        "voting_tokens": config.voting_tokens,
+        "join_token": config.join_token,
     }
     cfg_path.parent.mkdir(parents=True, exist_ok=True)
     cfg_path.write_text(json.dumps(data, indent=2, sort_keys=False) + "\n", encoding="utf-8")
 
 
-def _validate_config(features: list[Feature], evaluators: list[Evaluator]) -> None:
-    feature_keys = {f.key for f in features}
-    for ev in evaluators:
-        missing = sorted(feature_keys - set(ev.weights.keys()))
-        extra = sorted(set(ev.weights.keys()) - feature_keys)
-        if missing or extra:
-            raise ValueError(
-                f"Weight profile '{ev.name}' mismatch. missing={missing!r} extra={extra!r}"
-            )
+def get_or_create_token(project: str, evaluator: str) -> str:
+    config = load_config(project)
+    tokens = dict(config.voting_tokens)
+    token = tokens.get(evaluator)
+    if not token:
+        token = secrets.token_urlsafe(12)
+        tokens[evaluator] = token
+        save_config(replace(config, voting_tokens=tokens), project=project)
+    return token
+
+
+def regenerate_token(project: str, evaluator: str) -> str:
+    config = load_config(project)
+    tokens = dict(config.voting_tokens)
+    token = secrets.token_urlsafe(12)
+    tokens[evaluator] = token
+    save_config(replace(config, voting_tokens=tokens), project=project)
+    return token
+
+
+def get_join_token(project: str) -> str:
+    config = load_config(project)
+    if config.join_token:
+        return config.join_token
+    token = secrets.token_urlsafe(12)
+    save_config(replace(config, join_token=token), project=project)
+    return token
+
+
+def add_evaluator(project: str, name: str) -> ScoringConfig:
+    config = load_config(project)
+    if any(e.name == name for e in config.evaluators):
+        return config
+    config = replace(config, evaluators=[*config.evaluators, Evaluator(name=name, weights={})])
+    save_config(config, project=project)
+    return config
+
+
+def set_weights(project: str, evaluator: str, weights: dict[str, int]) -> None:
+    config = load_config(project)
+    evaluators = [
+        Evaluator(name=e.name, weights=weights if e.name == evaluator else e.weights)
+        for e in config.evaluators
+    ]
+    save_config(replace(config, evaluators=evaluators), project=project)

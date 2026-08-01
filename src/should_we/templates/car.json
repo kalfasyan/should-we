@@ -1,0 +1,25 @@
+{
+  "project_name": "New car",
+  "features": [
+    {
+      "key": "price",
+      "label": "Price"
+    },
+    {
+      "key": "fuel",
+      "label": "Fuel economy"
+    },
+    {
+      "key": "safety",
+      "label": "Safety"
+    },
+    {
+      "key": "space",
+      "label": "Space"
+    },
+    {
+      "key": "looks",
+      "label": "Looks"
+    }
+  ]
+}
