@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from nicegui import ui
+from pathlib import Path
+
+from nicegui import app, ui
 
 from .config import (
     Evaluator,
@@ -13,8 +15,11 @@ from .config import (
     save_config,
 )
 from .scoring import compute_combined
-from .storage import load_options, reprocess_all, save_option
+from .storage import delete_option, load_options, reprocess_all, save_option
 
+_assets = Path(__file__).resolve().parent.parent.parent / "docs" / "assets"
+if _assets.is_dir():
+    app.add_static_files("/assets", str(_assets))
 
 _project_key: str | None = None
 _config: ScoringConfig | None = None
@@ -79,6 +84,33 @@ def _do_delete(dialog):
         setup_panel.refresh()
 
 
+def _option_delete_dialog(name: str) -> ui.dialog:
+    with ui.dialog() as dialog, ui.card():
+        ui.label(f"Delete option '{name}'?").classes("text-h6")
+        ui.label("This cannot be undone.")
+        with ui.row().classes("justify-end gap-2 mt-4"):
+            ui.button("Cancel", on_click=dialog.close)
+            ui.button(
+                "Delete",
+                on_click=lambda: _do_delete_option(dialog, name),
+                color="red",
+            )
+    return dialog
+
+
+def _do_delete_option(dialog, name: str) -> None:
+    if not _project_key:
+        return
+    delete_option(name, _project_key)
+    dialog.close()
+    ui.notify(f"Deleted option '{name}'.", type="warning")
+    rankings_panel.refresh()
+
+
+def _score_bar(value: float) -> None:
+    ui.linear_progress(value=min(max(value / 5.0, 0.0), 1.0), show_value=False).classes("flex-grow")
+
+
 @ui.refreshable
 def rankings_panel():
     if not _config or not _project_key:
@@ -106,9 +138,18 @@ def rankings_panel():
         for i, opt in enumerate(sorted_opts):
             combined = compute_combined(opt.breakdown)
             icon = ["military_tech", "workspace_premium", "star"][i] if i < 3 else None
-            with ui.expansion(f"#{i + 1}  {opt.name}  —  {combined:.3f}", icon=icon).classes("w-full"):
+            with ui.expansion(f"#{i + 1}  {opt.name}  —  {combined:.3f}", icon=icon).classes(
+                "w-full"
+            ):
                 for ev_name, score in opt.breakdown.items():
-                    ui.label(f"{ev_name}:  {score:.3f}")
+                    with ui.row().classes("w-full items-center gap-3"):
+                        ui.label(ev_name).classes("w-32 text-caption")
+                        _score_bar(score)
+                        ui.label(f"{score:.3f}").classes("w-14 text-right")
+                del_dialog = _option_delete_dialog(opt.name)
+                ui.button(icon="delete", on_click=del_dialog.open).props(
+                    "flat round size=sm"
+                ).classes("text-red").tooltip("Delete option")
 
     def _on_reprocess():
         reprocess_all(_project_key)
@@ -120,7 +161,10 @@ def rankings_panel():
 @ui.refreshable
 def score_new_panel():
     if not _config or not _project_key:
-        ui.label("No project selected. Create one on the Setup tab or pick one from the top bar dropdown.")
+        ui.label(
+            "No project selected. Create one on the Setup tab or pick one "
+            "from the top bar dropdown."
+        )
         return
 
     with ui.card().classes("w-full mb-4"):
@@ -133,6 +177,7 @@ def score_new_panel():
 
     option_name = ui.input("Option name").classes("w-64")
     evaluator_inputs: dict[str, dict[str, ui.number]] = {}
+    weights_by_evaluator = {ev.name: ev.weights for ev in _config.evaluators}
 
     with ui.column().classes("w-full gap-4"):
         for ev in _config.evaluators:
@@ -143,6 +188,9 @@ def score_new_panel():
                     for feat in _config.features:
                         with ui.column():
                             ui.label(feat.label).classes("text-caption")
+                            ui.label(f"w={weights_by_evaluator[ev.name].get(feat.key, 0)}").classes(
+                                "text-xs text-grey-5"
+                            )
                             inp = ui.number(value=0, min=0, max=5, step=0.5).classes("w-20")
                             ev_scores[feat.key] = inp
                 evaluator_inputs[ev.name] = ev_scores
@@ -171,8 +219,14 @@ def setup_panel():
     with ui.card().classes("w-full mb-4"):
         with ui.column().classes("gap-1"):
             ui.markdown("### How to set up a project").classes("mb-2")
-            ui.label("1. Enter a project name, the names of the people deciding, and the features you care about.")
-            ui.label("2. Click Generate weight grid to set how much each feature matters to each person (0–5).")
+            ui.label(
+                "1. Enter a project name, the names of the people deciding, "
+                "and the features you care about."
+            )
+            ui.label(
+                "2. Click Generate weight grid to set how much each feature "
+                "matters to each person (0–5)."
+            )
             ui.label("3. Click Save Config — the new project auto-selects in the top bar.")
             ui.label("4. Switch to the Score New tab to start rating options.")
 
@@ -190,7 +244,9 @@ def setup_panel():
         features_data.clear()
 
         ev_names = [n.strip() for n in evaluator_names.value.strip().split("\n") if n.strip()]
-        feat_labels = [l.strip() for l in feature_labels.value.strip().split("\n") if l.strip()]
+        feat_labels = [
+            label.strip() for label in feature_labels.value.strip().split("\n") if label.strip()
+        ]
 
         if not ev_names or not feat_labels:
             ui.notify("Enter at least one evaluator and one feature.", type="warning")
@@ -245,7 +301,7 @@ def setup_panel():
     ui.button("Save Config", on_click=_save_config, icon="save")
 
 
-@ui.page("/")
+@ui.page("/", title="should-we", favicon="/assets/logo.png")
 def index():
     global _dropdown
 
@@ -253,7 +309,9 @@ def index():
     _init_state()
 
     with ui.header(elevated=True).classes("items-center justify-between px-4"):
-        ui.label("should-we").classes("text-h5")
+        with ui.row().classes("items-center gap-3"):
+            ui.image("/assets/logo.png").classes("w-9")
+            ui.label("should-we").classes("text-h5")
         projects = list_projects()
         if projects:
             with ui.row().classes("items-center gap-2"):
@@ -268,8 +326,15 @@ def index():
                     ui.label("This cannot be undone.")
                     with ui.row().classes("justify-end gap-2 mt-4"):
                         ui.button("Cancel", on_click=delete_dialog.close)
-                        ui.button("Delete", on_click=lambda: _do_delete(delete_dialog), color="red")
-                ui.button(icon="delete", on_click=lambda: _open_delete_dialog(delete_dialog, delete_label)).props("round").classes("text-red")
+                        ui.button(
+                            "Delete",
+                            on_click=lambda: _do_delete(delete_dialog),
+                            color="red",
+                        )
+                ui.button(
+                    icon="delete",
+                    on_click=lambda: _open_delete_dialog(delete_dialog, delete_label),
+                ).props("round").classes("text-red")
 
     with ui.tabs() as tabs:
         tab_setup = ui.tab("Setup")

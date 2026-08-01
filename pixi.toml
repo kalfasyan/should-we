@@ -2,7 +2,7 @@
 authors = ["Yannis Kalfas <ikalfas@protonmail.com>"]
 channels = ["conda-forge"]
 name = "should_we"
-platforms = ["osx-arm64"]
+platforms = ["osx-arm64", "linux-64"]
 version = "0.1.0"
 
 [tasks]
@@ -14,9 +14,20 @@ reprocess = "PYTHONPATH=src python -m should_we reprocess"
 setup = "PYTHONPATH=src python -m should_we setup"
 ui = "PYTHONPATH=src python -m should_we ui"
 delete = "PYTHONPATH=src python -m should_we delete"
+lint = "ruff check ."
+lint-fix = "ruff check . --fix"
+format = "ruff format --check ."
+format-fix = "ruff format ."
+test = "pytest"
+check = "ruff check . && ruff format --check . && pytest"
+pre-commit = "pre-commit run --all-files"
+pre-commit-install = "pre-commit install"
 
 [dependencies]
 python = "3.13.*"
+pytest = "*"
+ruff = "*"
 
 [pypi-dependencies]
 nicegui = "*"
+pre-commit = "*"

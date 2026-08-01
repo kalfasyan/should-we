@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import sys
 
+from . import __version__
 from .config import (
     Evaluator,
     Feature,
@@ -30,7 +31,8 @@ def _parse_score(raw: str, *, default: float = 0.0) -> float:
 
 def _add_project_arg(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
-        "-p", "--project",
+        "-p",
+        "--project",
         help="Project to use (auto-detected if only one exists)",
     )
 
@@ -74,7 +76,7 @@ def cmd_list(args: argparse.Namespace) -> int:
             cfg_path, _ = project_paths(p)
             cfg = load_config(p)
             n_opt = len(load_options(p))
-            print(f"  {p}  — \"{cfg.project_name}\" ({n_opt} option(s))")
+            print(f'  {p}  — "{cfg.project_name}" ({n_opt} option(s))')
         print("\nUse --project <name> to list options. E.g.: pixi run list -p home-buying")
         return 0
 
@@ -131,7 +133,11 @@ def cmd_delete(args: argparse.Namespace) -> int:
 
 
 def cmd_setup(args: argparse.Namespace) -> int:
-    project_name = input("\nWhat are you thinking of buying? (this will be the project name, e.g. 'apartment', 'vacation', 'car'): ").strip()
+    prompt = (
+        "\nWhat are you thinking of buying? (this will be the project name, "
+        "e.g. 'apartment', 'vacation', 'car'): "
+    )
+    project_name = input(prompt).strip()
     while not project_name:
         project_name = input("Let's give it a name (cannot be empty): ").strip()
 
@@ -141,12 +147,17 @@ def cmd_setup(args: argparse.Namespace) -> int:
         print(f"Project '{project_key}' already exists. Use --force to overwrite.")
         return 1
 
-    raw = input("\nWho's making this decision together? (comma-separated names, e.g. 'Alice, Bob'): ").strip()
+    raw = input(
+        "\nWho's making this decision together? (comma-separated names, e.g. 'Alice, Bob'): "
+    ).strip()
     while not raw:
         raw = input("Need at least one person. Names (comma-separated): ").strip()
     evaluator_names = [n.strip() for n in raw.split(",") if n.strip()]
 
-    raw = input("\nWhat are the things you care about when picking one?\n(comma-separated, e.g. 'Price, Location, Parking'): ").strip()
+    raw = input(
+        "\nWhat are the things you care about when picking one?\n"
+        "(comma-separated, e.g. 'Price, Location, Parking'): "
+    ).strip()
     while not raw:
         raw = input("Need at least one feature. Things you care about (comma-separated): ").strip()
     feature_labels = [f.strip() for f in raw.split(",") if f.strip()]
@@ -172,6 +183,7 @@ def cmd_setup(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="should_we", description="Weighted ranking CLI")
+    p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     p_new = sub.add_parser("new", help="Interactively enter a new option and compute score")

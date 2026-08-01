@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 
-DATA_DIR = Path("data")
+
+def data_dir() -> Path:
+    return Path(os.environ.get("SHOULD_WE_DATA", "data"))
+
 
 @dataclass(frozen=True)
 class Feature:
@@ -32,22 +36,23 @@ def _label_to_key(label: str) -> str:
 
 
 def project_paths(project: str) -> tuple[Path, Path]:
-    base = DATA_DIR / project
+    base = data_dir() / project
     return base / "config.json", base / "options.json"
 
 
 def list_projects() -> list[str]:
-    if not DATA_DIR.exists():
+    root = data_dir()
+    if not root.exists():
         return []
     projects: list[str] = []
-    for d in sorted(DATA_DIR.iterdir()):
+    for d in sorted(root.iterdir()):
         if d.is_dir() and (d / "config.json").exists():
             projects.append(d.name)
     return projects
 
 
 def delete_project(project: str) -> None:
-    base = DATA_DIR / project
+    base = data_dir() / project
     if base.exists():
         shutil.rmtree(base)
 
@@ -75,7 +80,9 @@ def load_config(project: str | None = None) -> ScoringConfig:
     raw = json.loads(cfg_path.read_text(encoding="utf-8"))
 
     features = [Feature(key=f["key"], label=f["label"]) for f in raw["features"]]
-    evaluators = [Evaluator(name=e["name"], weights=e.get("weights", {})) for e in raw["evaluators"]]
+    evaluators = [
+        Evaluator(name=e["name"], weights=e.get("weights", {})) for e in raw["evaluators"]
+    ]
 
     _validate_config(features, evaluators)
     return ScoringConfig(

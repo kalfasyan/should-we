@@ -29,7 +29,9 @@ def _write_json(path: Path, payload: list[dict]) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=False) + "\n", encoding="utf-8")
 
 
-def _normalize_scores(raw_scores: dict | None, config: ScoringConfig) -> dict[str, dict[str, float]]:
+def _normalize_scores(
+    raw_scores: dict | None, config: ScoringConfig
+) -> dict[str, dict[str, float]]:
     raw_scores = raw_scores or {}
     scores: dict[str, dict[str, float]] = {}
     for ev in config.evaluators:
@@ -105,6 +107,17 @@ def find_option(name: str, project: str | None = None) -> Option | None:
         if opt.name == name:
             return opt
     return None
+
+
+def delete_option(name: str, project: str | None = None) -> bool:
+    project = resolve_project(project)
+    _, opt_path = project_paths(project)
+    payload = _read_json(opt_path)
+    remaining = [item for item in payload if str(item.get("name", "")).strip() != name]
+    if len(remaining) == len(payload):
+        return False
+    _write_json(opt_path, remaining)
+    return True
 
 
 def reprocess_all(project: str | None = None) -> int:

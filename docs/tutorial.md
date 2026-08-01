@@ -11,9 +11,8 @@ We'll do this in 3 steps:
 2. Score your options
 3. See who wins
 
-!!! tip "Web UI"
-    Don't like the terminal? Run `pixi run ui` for a dark-mode web app that
-    does everything below with a few clicks.
+> **Tip — web UI:** don't like the terminal? Run `pixi run ui` for a
+> dark-mode web app that does everything below with a few clicks.
 
 ---
 
@@ -85,9 +84,9 @@ That's it. Each project gets its own directory under `data/` —
 | 3 | Important |
 | 5 | Make or break |
 
-!!! tip "Want to tweak later?"
-    Edit `data/car/config.json` by hand, then run `pixi run reprocess` to update
-    existing scores. Or run `pixi run setup` to create a whole new project.
+> **Want to tweak later?** Edit `data/car/config.json` by hand, then run
+> `pixi run reprocess` to update existing scores. Or run `pixi run setup` to
+> create a whole new project.
 
 ---
 
@@ -170,11 +169,11 @@ $$\frac{2.333 + 4.000}{2} = 3.167$$
 
 That's the number you see in the leaderboard.
 
-!!! info "Key insight"
-    Alice rated the car lower (mostly 2s and 3s) and the features she cares
-    about got low scores. Bob rated everything highly and cares deeply about
-    Price and Eco, which he gave 4s. So Bob's own score (4.0) is much higher
-    than Alice's (2.3). The combined score (3.2) is the middle ground.
+> **Key insight:** Alice rated the car lower (mostly 2s and 3s) and the
+> features she cares about got low scores. Bob rated everything highly and
+> cares deeply about Price and Eco, which he gave 4s. So Bob's own score
+> (4.0) is much higher than Alice's (2.3). The combined score (3.2) is the
+> middle ground.
 
 ---
 
@@ -196,7 +195,7 @@ first.
 Drill into one:
 
 ```bash
-pixi run show -- tesla
+pixi run show tesla -p car
 ```
 
 ```
