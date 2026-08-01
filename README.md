@@ -9,6 +9,8 @@ higher while their partner weights "cup-holders."
 weights (`setup`). Then, for each option, every evaluator scores it feature-by-feature
 (`new`). The tool averages everyone's weighted scores into a final ranking (`list`).
 
+Prefer a GUI? Run `pixi run ui` for a dark-mode web app with the same functionality.
+
 ### Prerequisites
 
 Install [pixi](https://pixi.prefix.dev/latest/installation/), then clone this repo.

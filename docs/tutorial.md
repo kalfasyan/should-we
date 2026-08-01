@@ -11,6 +11,10 @@ We'll do this in 3 steps:
 2. Score your options
 3. See who wins
 
+!!! tip "Web UI"
+    Don't like the terminal? Run `pixi run ui` for a dark-mode web app that
+    does everything below with a few clicks.
+
 ---
 
 ## Step 1: Setup — What Are We Judging?
@@ -242,6 +246,7 @@ by hand — they're plain JSON.
 | `pixi run new [-p <project>]` | Add an option interactively |
 | `pixi run show <name> [-p <project>]` | Inspect one option |
 | `pixi run reprocess [-p <project>]` | Re-score everything (after editing JSON by hand) |
+| `pixi run ui` | Launch the web app |
 
 `-p` is optional when only one project exists.
 
