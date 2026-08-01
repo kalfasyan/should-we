@@ -27,6 +27,10 @@ Install [pixi](https://pixi.prefix.dev/latest/installation/), then clone this re
   - `pixi run show <name> [-p <project>]`
 - **After editing the JSON by hand, recompute scores**:
   - `pixi run reprocess [-p <project>]`
+- **Delete a project**:
+  - `pixi run delete <project>`
+- **Launch the web UI**:
+  - `pixi run ui`
 
 ### Configuration
 

@@ -8,6 +8,7 @@ from .config import (
     Feature,
     ScoringConfig,
     _label_to_key,
+    delete_project,
     list_projects,
     load_config,
     project_paths,
@@ -104,6 +105,31 @@ def cmd_reprocess(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_ui(args: argparse.Namespace) -> int:
+    from .ui import run
+
+    run()
+    return 0
+
+
+def cmd_delete(args: argparse.Namespace) -> int:
+    project = args.project
+    if not project:
+        print("Usage: python -m should_we_buy delete <project>")
+        return 1
+    cfg_path, _ = project_paths(project)
+    if not cfg_path.exists():
+        print(f"Project '{project}' not found.")
+        return 1
+    confirm = input(f"Delete project '{project}' and all its options? [y/N]: ").strip().lower()
+    if confirm != "y":
+        print("Cancelled.")
+        return 0
+    delete_project(project)
+    print(f"Deleted project '{project}'.")
+    return 0
+
+
 def cmd_setup(args: argparse.Namespace) -> int:
     project_name = input("\nWhat are you thinking of buying? (this will be the project name, e.g. 'apartment', 'vacation', 'car'): ").strip()
     while not project_name:
@@ -171,6 +197,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_project_arg(p_re)
     p_re.set_defaults(func=cmd_reprocess)
+
+    p_ui = sub.add_parser("ui", help="Launch the NiceGUI web app")
+    p_ui.set_defaults(func=cmd_ui)
+
+    p_delete = sub.add_parser("delete", help="Delete a project and all its options")
+    p_delete.add_argument("project", help="Project key to delete")
+    p_delete.set_defaults(func=cmd_delete)
 
     return p
 

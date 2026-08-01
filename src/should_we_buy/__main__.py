@@ -1,5 +1,8 @@
 from __future__ import annotations
 
-from .cli import main
+import sys
 
-raise SystemExit(main())
+from should_we_buy.cli import main
+
+if len(sys.argv) > 1:
+    raise SystemExit(main())

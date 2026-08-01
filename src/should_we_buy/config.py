@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -43,6 +44,12 @@ def list_projects() -> list[str]:
         if d.is_dir() and (d / "config.json").exists():
             projects.append(d.name)
     return projects
+
+
+def delete_project(project: str) -> None:
+    base = DATA_DIR / project
+    if base.exists():
+        shutil.rmtree(base)
 
 
 def resolve_project(name: str | None = None) -> str:
