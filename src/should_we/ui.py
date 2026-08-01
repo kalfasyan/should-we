@@ -253,7 +253,7 @@ def index():
     _init_state()
 
     with ui.header(elevated=True).classes("items-center justify-between px-4"):
-        ui.label("should-we-buy").classes("text-h5")
+        ui.label("should-we").classes("text-h5")
         projects = list_projects()
         if projects:
             with ui.row().classes("items-center gap-2"):

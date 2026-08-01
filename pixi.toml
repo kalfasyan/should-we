@@ -1,19 +1,19 @@
 [workspace]
 authors = ["Yannis Kalfas <ikalfas@protonmail.com>"]
 channels = ["conda-forge"]
-name = "should_we_buy"
+name = "should_we"
 platforms = ["osx-arm64"]
 version = "0.1.0"
 
 [tasks]
-app = "PYTHONPATH=src python -m should_we_buy"
-new = "PYTHONPATH=src python -m should_we_buy new"
-list = "PYTHONPATH=src python -m should_we_buy list"
-show = "PYTHONPATH=src python -m should_we_buy show"
-reprocess = "PYTHONPATH=src python -m should_we_buy reprocess"
-setup = "PYTHONPATH=src python -m should_we_buy setup"
-ui = "PYTHONPATH=src python -m should_we_buy ui"
-delete = "PYTHONPATH=src python -m should_we_buy delete"
+app = "PYTHONPATH=src python -m should_we"
+new = "PYTHONPATH=src python -m should_we new"
+list = "PYTHONPATH=src python -m should_we list"
+show = "PYTHONPATH=src python -m should_we show"
+reprocess = "PYTHONPATH=src python -m should_we reprocess"
+setup = "PYTHONPATH=src python -m should_we setup"
+ui = "PYTHONPATH=src python -m should_we ui"
+delete = "PYTHONPATH=src python -m should_we delete"
 
 [dependencies]
 python = "3.13.*"

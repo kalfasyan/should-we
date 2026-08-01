@@ -1,6 +1,6 @@
-<p align="center"><img src="docs/assets/logo.png" alt="should-we-buy logo" width="256"></p>
+<p align="center"><img src="docs/assets/logo.png" alt="should-we logo" width="256"></p>
 
-## should-we-buy — Generic Weighted Ranking CLI
+## should-we — Generic Weighted Ranking CLI
 
 Rank options (homes, cars, vacation spots, etc.) when multiple people need to agree.
 Each person rates every option on the same set of features, but each person also

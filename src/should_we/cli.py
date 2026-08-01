@@ -80,7 +80,7 @@ def cmd_list(args: argparse.Namespace) -> int:
 
     options = load_options(args.project)
     if not options:
-        print("No saved options yet. Run: python -m should_we_buy new")
+        print("No saved options yet. Run: python -m should_we new")
         return 0
     for opt in sorted(options, key=lambda x: compute_combined(x.breakdown), reverse=True):
         print(f"{opt.name}  (combined={compute_combined(opt.breakdown):.3f})")
@@ -115,7 +115,7 @@ def cmd_ui(args: argparse.Namespace) -> int:
 def cmd_delete(args: argparse.Namespace) -> int:
     project = args.project
     if not project:
-        print("Usage: python -m should_we_buy delete <project>")
+        print("Usage: python -m should_we delete <project>")
         return 1
     cfg_path, _ = project_paths(project)
     if not cfg_path.exists():
@@ -171,7 +171,7 @@ def cmd_setup(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="should_we_buy", description="Weighted ranking CLI")
+    p = argparse.ArgumentParser(prog="should_we", description="Weighted ranking CLI")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     p_new = sub.add_parser("new", help="Interactively enter a new option and compute score")
