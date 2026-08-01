@@ -1,6 +1,13 @@
 ## should-we-buy — Generic Weighted Ranking CLI
 
-Rank options (homes, cars, vacation spots, etc.) based on N evaluators' weighted opinions on user-defined features.
+Rank options (homes, cars, vacation spots, etc.) when multiple people need to agree.
+Each person rates every option on the same set of features, but each person also
+decides how much each feature *matters to them* — so a car nut can weight "horsepower"
+higher while their partner weights "cup-holders."
+
+**Flow**: First, define the features and the people (evaluators) with their personal
+weights (`setup`). Then, for each option, every evaluator scores it feature-by-feature
+(`new`). The tool averages everyone's weighted scores into a final ranking (`list`).
 
 ### Prerequisites
 
