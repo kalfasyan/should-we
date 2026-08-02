@@ -219,3 +219,9 @@ data/config_yn.json
 data/options_yn.json
 data/homes.json
 data/car/
+
+# Screenshots — kept local, not for version control
+/docs/assets/screenshot-*.png
+
+# Personal cheat sheet — not for version control
+/tmp/
