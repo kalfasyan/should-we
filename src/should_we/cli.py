@@ -9,6 +9,7 @@ from .config import (
     Feature,
     ScoringConfig,
     _label_to_key,
+    default_join_expiry,
     delete_project,
     list_projects,
     load_config,
@@ -174,7 +175,12 @@ def cmd_setup(args: argparse.Namespace) -> int:
             weights[feat.key] = int(val) if val else 0
         evaluators.append(Evaluator(name=ev_name, weights=weights))
 
-    config = ScoringConfig(project_name=project_name, features=features, evaluators=evaluators)
+    config = ScoringConfig(
+        project_name=project_name,
+        features=features,
+        evaluators=evaluators,
+        join_expires_at=default_join_expiry(),
+    )
     save_config(config, project=project_key)
     print(f"\nAll set! Config saved to data/{project_key}/.")
     print(f"  {len(features)} feature(s), {len(evaluators)} people. Ready to `pixi run new`.")

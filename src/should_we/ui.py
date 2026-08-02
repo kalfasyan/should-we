@@ -4,6 +4,7 @@ import csv
 import io
 import json
 import os
+import secrets
 from pathlib import Path
 
 from nicegui import app, ui
@@ -13,9 +14,13 @@ from .config import (
     ScoringConfig,
     _label_to_key,
     add_evaluator,
+    default_join_expiry,
     delete_project,
+    extend_join_link,
     get_join_token,
     get_or_create_token,
+    join_link_days_left,
+    join_link_expired,
     list_projects,
     load_config,
     regenerate_token,
@@ -38,6 +43,20 @@ _assets = Path(__file__).resolve().parent.parent.parent / "docs" / "assets"
 if _assets.is_dir():
     app.add_static_files("/assets", str(_assets))
 
+_pwa = Path(__file__).resolve().parent / "pwa"
+app.add_static_file(local_file=_pwa / "manifest.json", url_path="/manifest.json")
+app.add_static_file(local_file=_pwa / "sw.js", url_path="/sw.js")
+app.add_static_files("/pwa", str(_pwa))
+ui.add_head_html(
+    '<link rel="manifest" href="/manifest.json">'
+    '<link rel="apple-touch-icon" href="/pwa/icon-180.png">'
+    '<meta name="theme-color" content="#121212">'
+    '<script>if ("serviceWorker" in navigator) {'
+    'window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));'
+    "}</script>",
+    shared=True,
+)
+
 _project_key: str | None = None
 _config: ScoringConfig | None = None
 _dropdown: ui.select | None = None
@@ -51,6 +70,34 @@ def _init_state():
     if projects:
         _project_key = projects[0]
         _config = load_config(_project_key)
+
+
+def _admins() -> dict[str, str]:
+    """Admin name → password map from SHOULD_WE_ADMINS (JSON). Empty means no admins configured."""
+    raw = os.environ.get("SHOULD_WE_ADMINS", "")
+    if not raw:
+        return {}
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    return {str(k): str(v) for k, v in data.items()} if isinstance(data, dict) else {}
+
+
+def _check_login(name: str | None, password: str | None) -> bool:
+    expected = _admins().get((name or "").strip())
+    return bool(expected) and secrets.compare_digest(expected, password or "")
+
+
+def _is_admin() -> bool:
+    try:
+        return bool(app.storage.user.get("admin"))
+    except RuntimeError:  # storage_secret missing → fail closed
+        return False
+
+
+def _results_allowed(token: str, join_token: str, is_admin: bool) -> bool:
+    return is_admin or bool(join_token) and secrets.compare_digest(token or "", join_token)
 
 
 def _set_project(key: str):
@@ -167,6 +214,27 @@ def _invite_card(project: str, config: ScoringConfig) -> None:
                 icon="copy",
             ).props("outline")
 
+        if config.join_expires_at:
+            left = join_link_days_left(config)
+            expired = left is not None and left < 0
+            text = f"Join link expires: {config.join_expires_at}"
+            if expired:
+                text += " — expired, no one new can join"
+            elif left is not None and left <= 7:
+                text += f" ({left} day{'s' if left != 1 else ''} left)"
+            color = (
+                "text-negative"
+                if expired
+                else ("text-warning" if left is not None and left <= 7 else "text-grey-6")
+            )
+            with ui.row().classes("w-full items-center gap-2"):
+                ui.label(text).classes(f"text-caption {color}")
+                ui.button(
+                    "Extend 30 days",
+                    on_click=lambda: _extend_link(project),
+                    icon="update",
+                ).props("outline dense size=sm")
+
         if not config.evaluators:
             ui.label("No one has joined yet — send them the link above.").classes(
                 "text-caption text-grey-6"
@@ -189,6 +257,14 @@ def _invite_card(project: str, config: ScoringConfig) -> None:
                     ).props("flat round size=sm").tooltip(
                         "New link for this person (old one stops working)"
                     )
+
+
+def _extend_link(project: str) -> None:
+    global _config
+    expires = extend_join_link(project)
+    _config = load_config(project)
+    rankings_panel.refresh()
+    ui.notify(f"Join link extended to {expires}.", type="positive")
 
 
 @ui.refreshable
@@ -224,9 +300,6 @@ def _results_list(project: str, config: ScoringConfig, *, readonly: bool = False
     _vote_status(project, config)
     _charts_body(sorted_opts, config)
 
-    if readonly:
-        return
-
     ui.markdown(
         "Options ranked by combined score (average of all evaluators). "
         "Click any option to see each person's individual score."
@@ -261,7 +334,9 @@ def _results_list(project: str, config: ScoringConfig, *, readonly: bool = False
         with ui.row().classes("gap-2 items-center"):
             ui.button(
                 "Copy results link",
-                on_click=lambda: _copy_text(_abs_url(f"results/{project}"), "Results link copied"),
+                on_click=lambda: _copy_text(
+                    _abs_url(f"results/{project}/{get_join_token(project)}"), "Results link copied"
+                ),
                 icon="link",
             ).props("outline")
             ui.button("Reprocess", on_click=_reprocess, icon="refresh")
@@ -407,7 +482,13 @@ def setup_panel():
         pkey = _label_to_key(pname)
         features = [Feature(key=_label_to_key(label), label=label) for label in feat_labels]
         save_config(
-            ScoringConfig(project_name=pname, features=features, evaluators=[]), project=pkey
+            ScoringConfig(
+                project_name=pname,
+                features=features,
+                evaluators=[],
+                join_expires_at=default_join_expiry(),
+            ),
+            project=pkey,
         )
         ui.notify(f"Project '{pname}' saved!", type="positive")
         _set_project(pkey)
@@ -454,10 +535,19 @@ def vote_page(project: str, token: str):
             ui.label(f"voting as {evaluator}").classes("text-caption")
         ui.button(
             "See current results",
-            on_click=lambda: ui.navigate.to(f"/results/{project}"),
+            on_click=lambda: ui.navigate.to(f"/results/{project}/{get_join_token(project)}"),
         ).props("outline")
 
     with ui.column().classes("w-full max-w-3xl mx-auto px-4 py-4"):
+        if app.storage.user.pop("welcome", False):
+            with ui.card().classes("w-full mb-4"):
+                ui.markdown(f"### 👋 Welcome, {evaluator}!").classes("mb-1")
+                if config.join_expires_at:
+                    ui.label(
+                        f"The link you joined with is valid until {config.join_expires_at} — "
+                        "after that, no new people can join. Your personal voting link below "
+                        "keeps working."
+                    ).classes("text-caption")
         _vote_body(project, config, evaluator)
 
 
@@ -473,10 +563,11 @@ def _vote_body(project: str, config: ScoringConfig, evaluator: str) -> None:
     with ui.card().classes("w-full mb-4"):
         with ui.row().classes("items-center gap-2"):
             ui.icon("tune").classes("text-primary")
-            ui.markdown(f"### ⚖️ How much does each feature matter to you, {evaluator}?").classes(
-                "mb-0"
-            )
-        ui.label("0 = don't care  |  3 = important  |  5 = dealbreaker").classes("text-caption")
+            ui.markdown(f"### ⚖️ What matters to you in general, {evaluator}?").classes("mb-0")
+        ui.label(
+            "These are your general priorities — they apply to every option, "
+            "not to any specific one. 0 = don't care  |  3 = important  |  5 = dealbreaker"
+        ).classes("text-caption")
         sliders: dict[str, ui.slider] = {}
         for feat in config.features:
             with ui.row().classes("w-full items-center"):
@@ -493,18 +584,70 @@ def _vote_body(project: str, config: ScoringConfig, evaluator: str) -> None:
             ui.notify("Weights saved.", type="positive")
             _vote_body.refresh()
 
-        ui.button("Save my weights", on_click=_save_weights, icon="save")
+        ui.label("Then press 'Save my weights' — nothing counts until you do.").classes(
+            "text-caption text-warning"
+        )
+        ui.button("Save my weights", on_click=_save_weights, icon="save").props("unelevated")
 
     if not ev_config.weights:
         ui.label("Save your weights above first — without them your votes don't count.").classes(
             "text-warning mb-2"
         )
 
+    if not options:
+        with ui.card().classes("w-full mb-4"):
+            ui.label("No options yet — add the first one below 👇").classes("text-grey-6")
+    else:
+        ui.markdown(
+            "For each option, rate how well it does on each feature — "
+            "then press **Save vote** (nothing counts until you save)."
+        ).classes("mb-2")
+        for opt in options:
+            with ui.card().classes("w-full mb-4"):
+                ui.label(opt.name).classes("text-h6")
+                ui.label(
+                    "How well does this option do on each feature? (0 = poor  |  5 = excellent)"
+                ).classes("text-caption")
+                if opt.name in votes.get(evaluator, {}):
+                    ui.label("✓ voted").classes("text-positive text-caption")
+                ev_inps: dict[str, ui.slider] = {}
+                with ui.column().classes("w-full gap-2"):
+                    for feat in config.features:
+                        with ui.row().classes("w-full items-center"):
+                            ui.label(feat.label).classes("w-32")
+                            s = (
+                                ui.slider(
+                                    min=0,
+                                    max=5,
+                                    step=0.5,
+                                    value=float(opt.scores.get(evaluator, {}).get(feat.key, 0.0)),
+                                )
+                                .props("label-always")
+                                .classes("flex-grow")
+                            )
+                            ev_inps[feat.key] = s
+                with ui.row().classes("w-full items-center gap-2 mt-2"):
+                    note_inp = (
+                        ui.input(value=opt.notes, placeholder="Link or note")
+                        .props("dense")
+                        .classes("flex-grow")
+                    )
+                    ui.button(
+                        "Save note",
+                        icon="link",
+                        on_click=lambda n=opt.name, inp=note_inp: _save_note(project, n, inp.value),
+                    ).props("flat dense")
+                    ui.button(
+                        "Save my vote",
+                        icon="save",
+                        on_click=lambda n=opt.name, ev=ev_inps: _save_vote(
+                            project, evaluator, n, {k: v.value for k, v in ev.items()}
+                        ),
+                    ).props("unelevated")
+
     with ui.card().classes("w-full mb-4"):
         ui.markdown("### ➕ Add an option").classes("mb-2")
-        ui.label("Something to compare? Add it — everyone else can vote on it too.").classes(
-            "text-caption"
-        )
+        ui.label("Add one any time — everyone else can vote on it too.").classes("text-caption")
         new_name = ui.input("Option name").classes("w-64")
         new_notes = ui.input("Link or note (optional)").classes("w-64")
 
@@ -520,59 +663,18 @@ def _vote_body(project: str, config: ScoringConfig, evaluator: str) -> None:
                 )
                 return
             save_option(name, {evaluator: {}}, project=project, notes=new_notes.value.strip())
-            ui.notify(f"'{name}' added — now rate it below.", type="positive")
+            ui.notify(f"'{name}' added — now rate it above.", type="positive")
             new_name.value = ""
             new_notes.value = ""
             _vote_body.refresh()
 
         ui.button("Add option", on_click=_add_option, icon="add")
 
-    ui.markdown("Rate each option 0–5 per feature, then save your vote.").classes("mb-2")
-
-    if not options:
-        with ui.card().classes("w-full"):
-            ui.label("No options yet — add the first one above 👆").classes("text-grey-6")
-        return
-
-    for opt in options:
-        with ui.card().classes("w-full mb-4"):
-            ui.label(opt.name).classes("text-h6")
-            if opt.name in votes.get(evaluator, {}):
-                ui.label("✓ voted").classes("text-positive text-caption")
-            ev_inps: dict[str, ui.slider] = {}
-            with ui.column().classes("w-full gap-2"):
-                for feat in config.features:
-                    with ui.row().classes("w-full items-center"):
-                        ui.label(feat.label).classes("w-32")
-                        s = (
-                            ui.slider(
-                                min=0,
-                                max=5,
-                                step=0.5,
-                                value=float(opt.scores.get(evaluator, {}).get(feat.key, 0.0)),
-                            )
-                            .props("label-always")
-                            .classes("flex-grow")
-                        )
-                        ev_inps[feat.key] = s
-            with ui.row().classes("w-full items-center gap-2 mt-2"):
-                note_inp = (
-                    ui.input(value=opt.notes, placeholder="Link or note")
-                    .props("dense")
-                    .classes("flex-grow")
-                )
-                ui.button(
-                    "Save note",
-                    icon="link",
-                    on_click=lambda n=opt.name, inp=note_inp: _save_note(project, n, inp.value),
-                ).props("outline dense")
-                ui.button(
-                    "Save my vote",
-                    icon="save",
-                    on_click=lambda n=opt.name, ev=ev_inps: _save_vote(
-                        project, evaluator, n, {k: v.value for k, v in ev.items()}
-                    ),
-                )
+    ui.button(
+        "See current results",
+        on_click=lambda: ui.navigate.to(f"/results/{project}/{get_join_token(project)}"),
+        icon="assessment",
+    ).props("outline").classes("w-full")
 
 
 @ui.page("/join/{project}/{token}")
@@ -585,6 +687,15 @@ def join_page(project: str, token: str):
         return
     if not config.join_token or config.join_token != token:
         _bad_link()
+        return
+    if join_link_expired(config):
+        ui.dark_mode().enable()
+        with ui.column().classes("items-center justify-center h-screen gap-2"):
+            ui.label("This join link has expired.").classes("text-h5")
+            ui.label(
+                f"It stopped working on {config.join_expires_at}. "
+                "Ask the project owner for a fresh link."
+            ).classes("text-caption")
         return
 
     with ui.header(elevated=True).classes("items-center justify-between px-4"):
@@ -605,6 +716,7 @@ def join_page(project: str, token: str):
                 return
             add_evaluator(project, name)
             token2 = get_or_create_token(project, name)
+            app.storage.user["welcome"] = True
             ui.navigate.to(f"/vote/{project}/{token2}")
 
         ui.button("Join and vote", on_click=_join, icon="login")
@@ -628,22 +740,75 @@ def _bad_link() -> None:
         ui.label("Ask the project owner for a fresh voting link.").classes("text-caption")
 
 
-@ui.page("/results/{project}")
-def results_page(project: str):
+def _login_page() -> None:
     ui.dark_mode().enable()
-    try:
-        config = load_config(project)
-    except SystemExit:
-        ui.label("Project not found.").classes("text-h5")
-        return
+    with ui.column().classes(
+        "items-center justify-center h-screen gap-2 w-full max-w-sm mx-auto px-4"
+    ):
+        ui.image("/pwa/icon-192.png").classes("w-24")
+        ui.markdown("### should-we").classes("mb-2")
+        ui.label("Admin area — for project owners only.").classes("text-caption text-grey-6")
+        name_inp = ui.input("Admin name").classes("w-full")
+        pw_inp = ui.input("Password", password=True, password_toggle_button=True).classes("w-full")
+
+        def _try_login():
+            if not _admins():
+                ui.notify("No admins configured — set SHOULD_WE_ADMINS.", type="negative")
+                return
+            if not _check_login(name_inp.value, pw_inp.value):
+                ui.notify("Wrong name or password.", type="negative")
+                return
+            app.storage.user["admin"] = name_inp.value.strip()
+            ui.navigate.reload()
+
+        ui.button("Log in", on_click=_try_login, icon="login").classes("w-full")
+
+
+def _logout() -> None:
+    app.storage.user.clear()
+    ui.navigate.reload()
+
+
+def _results_body(project: str, config: ScoringConfig) -> None:
     with ui.header(elevated=True).classes("items-center justify-between px-4"):
         ui.label(f"{config.project_name} — results").classes("text-h6")
     with ui.column().classes("w-full max-w-4xl mx-auto px-4 py-4"):
         _results_list(project, config, readonly=True)
 
 
+@ui.page("/results/{project}/{token}")
+def results_page(project: str, token: str):
+    ui.dark_mode().enable()
+    try:
+        config = load_config(project)
+    except SystemExit:
+        ui.label("Project not found.").classes("text-h5")
+        return
+    if not _results_allowed(token, config.join_token or "", _is_admin()):
+        _bad_link()
+        return
+    _results_body(project, config)
+
+
+@ui.page("/results/{project}")
+def results_admin_page(project: str):
+    ui.dark_mode().enable()
+    try:
+        config = load_config(project)
+    except SystemExit:
+        ui.label("Project not found.").classes("text-h5")
+        return
+    if not _is_admin():
+        _bad_link()
+        return
+    _results_body(project, config)
+
+
 @ui.page("/", title="should-we", favicon="/assets/logo.png")
 def index():
+    if not _is_admin():
+        _login_page()
+        return
     global _dropdown, _panels, _tab_rankings
 
     ui.dark_mode().enable()
@@ -653,6 +818,8 @@ def index():
         with ui.row().classes("items-center gap-3"):
             ui.image("/assets/logo.png").classes("w-9")
             ui.label("should-we").classes("text-h5")
+        with ui.row().classes("items-center gap-2"):
+            ui.button("Logout", on_click=_logout, icon="logout").props("flat dense")
         projects = list_projects()
         if projects:
             with ui.row().classes("items-center gap-2"):
@@ -692,4 +859,9 @@ def index():
 
 
 def run():
-    ui.run(reload=False, host=os.environ.get("SHOULD_WE_HOST", "127.0.0.1"))
+    ui.run(
+        reload=False,
+        host=os.environ.get("SHOULD_WE_HOST", "127.0.0.1"),
+        storage_secret=os.environ.get("SHOULD_WE_STORAGE_SECRET"),
+        session_middleware_kwargs={"https_only": True},
+    )

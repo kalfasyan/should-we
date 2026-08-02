@@ -1,14 +1,20 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
+from datetime import date, timedelta
 
 from should_we.config import (
     Evaluator,
     Feature,
     ScoringConfig,
     add_evaluator,
+    default_join_expiry,
+    extend_join_link,
     get_join_token,
     get_or_create_token,
+    join_link_days_left,
+    join_link_expired,
     load_config,
     project_paths,
     regenerate_token,
@@ -211,3 +217,37 @@ def test_disagreement():
     assert disagreement({"A": 5.0, "B": 5.0}) == 0.0
     assert disagreement({"A": 1.0, "B": 5.0}) >= 1.5
     assert disagreement({"A": 4.0}) is None
+
+
+def test_join_link_no_expiry_never_expires():
+    assert join_link_expired(_make_config()) is False
+    assert join_link_days_left(_make_config()) is None
+
+
+def test_join_link_expiry_boundaries():
+    yesterday = replace(
+        _make_config(), join_expires_at=(date.today() - timedelta(days=1)).isoformat()
+    )
+    assert join_link_expired(yesterday) is True
+    assert join_link_days_left(yesterday) == -1
+    today = replace(_make_config(), join_expires_at=date.today().isoformat())
+    assert join_link_expired(today) is False
+    assert join_link_days_left(today) == 0
+
+
+def test_join_link_expiry_bad_date_fails_closed():
+    bad = replace(_make_config(), join_expires_at="not-a-date")
+    assert join_link_expired(bad) is True
+
+
+def test_extend_join_link_roundtrip(monkeypatch, tmp_path):
+    monkeypatch.setenv("SHOULD_WE_DATA", str(tmp_path))
+    save_config(_make_config(), project="test-project")
+    expires = extend_join_link("test-project")
+    assert expires == (date.today() + timedelta(days=30)).isoformat()
+    assert load_config("test-project").join_expires_at == expires
+    assert join_link_days_left(load_config("test-project")) == 30
+
+
+def test_default_join_expiry_is_30_days_out():
+    assert default_join_expiry() == (date.today() + timedelta(days=30)).isoformat()
