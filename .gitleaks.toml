@@ -1,0 +1,11 @@
+# Allowlist: per-project bearer tokens (join/voting links) live in
+# data/**/config.json by design, and pixi.toml carries dev-only
+# placeholder secrets. Anything else is scanned.
+[extend]
+useDefault = true
+
+[allowlist]
+paths = [
+    '''data/.*/config\.json''',
+    '''pixi\.toml''',
+]
