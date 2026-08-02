@@ -206,8 +206,10 @@ def _invite_card(project: str, config: ScoringConfig) -> None:
             "to them, then adds options and votes. No account, no install."
         ).classes("text-caption")
         join_url = _abs_url(f"join/{project}/{get_join_token(project)}")
-        with ui.row().classes("w-full items-center gap-2"):
-            ui.input(value=join_url).classes("flex-grow").props("readonly dense")
+        with ui.row().classes("w-full items-center gap-2 flex-wrap"):
+            ui.input(value=join_url).classes("w-full sm:w-auto sm:flex-grow min-w-0").props(
+                "readonly dense"
+            )
             ui.button(
                 "Copy join link",
                 on_click=lambda: _copy_text(join_url, "Join link copied"),
@@ -243,9 +245,11 @@ def _invite_card(project: str, config: ScoringConfig) -> None:
             ui.markdown("#### 👥 Joined people").classes("mb-1")
             for ev in config.evaluators:
                 url = _abs_url(f"vote/{project}/{get_or_create_token(project, ev.name)}")
-                with ui.row().classes("w-full items-center gap-2"):
-                    ui.label(ev.name).classes("w-28")
-                    ui.input(value=url).classes("flex-grow").props("readonly dense")
+                with ui.row().classes("w-full items-center gap-2 flex-wrap"):
+                    ui.label(ev.name).classes("w-full sm:w-28")
+                    ui.input(value=url).classes("w-full sm:w-auto sm:flex-grow min-w-0").props(
+                        "readonly dense"
+                    )
                     ui.button(
                         "Copy",
                         on_click=lambda u=url, n=ev.name: _copy_text(u, f"{n}'s link copied"),
@@ -273,7 +277,7 @@ def _vote_status(project: str, config: ScoringConfig) -> None:
     if not options:
         return
     votes = load_votes(project)
-    with ui.row().classes("gap-4 mb-2"):
+    with ui.row().classes("gap-4 mb-2 flex-wrap"):
         for ev in config.evaluators:
             voted = len(votes.get(ev.name, {}))
             ui.label(f"{'✅' if voted else '⏳'} {ev.name}: {voted}/{len(options)} voted").classes(
@@ -359,7 +363,11 @@ def _charts_body(sorted_opts, config: ScoringConfig) -> None:
             {
                 "tooltip": {},
                 "grid": {"left": 40, "right": 16, "top": 30, "bottom": 60},
-                "xAxis": {"type": "category", "data": names, "axisLabel": {"rotate": 30}},
+                "xAxis": {
+                    "type": "category",
+                    "data": names,
+                    "axisLabel": {"rotate": 30, "fontSize": 10},
+                },
                 "yAxis": {"type": "value", "min": 0, "max": 5},
                 "series": [
                     {
@@ -386,7 +394,11 @@ def _charts_body(sorted_opts, config: ScoringConfig) -> None:
             {
                 "tooltip": {},
                 "grid": {"left": 80, "right": 16, "top": 30, "bottom": 80},
-                "xAxis": {"type": "category", "data": names, "axisLabel": {"rotate": 30}},
+                "xAxis": {
+                    "type": "category",
+                    "data": names,
+                    "axisLabel": {"rotate": 30, "fontSize": 10},
+                },
                 "yAxis": {"type": "category", "data": ev_names},
                 "visualMap": {
                     "min": 0,
@@ -448,8 +460,8 @@ def setup_panel():
                 "then adds options and votes."
             )
 
-    project_name = ui.input("Project name").classes("w-64")
-    feature_labels = ui.textarea("Feature labels (one per line)").classes("w-64")
+    project_name = ui.input("Project name").classes("w-full sm:w-64")
+    feature_labels = ui.textarea("Feature labels (one per line)").classes("w-full sm:w-64")
 
     template_dir = Path(__file__).resolve().parent / "templates"
     templates = sorted(template_dir.glob("*.json")) if template_dir.is_dir() else []
@@ -466,7 +478,7 @@ def setup_panel():
                 label="Start from template",
                 options={p.stem: p.stem for p in templates},
                 on_change=lambda e: _apply_template(template_dir / f"{e.value}.json"),
-            ).classes("w-56")
+            ).classes("w-full sm:w-56")
 
     def _save_config():
         pname = project_name.value.strip()
@@ -529,14 +541,20 @@ def vote_page(project: str, token: str):
         _bad_link()
         return
 
-    with ui.header(elevated=True).classes("items-center justify-between px-4"):
-        with ui.row().classes("items-center gap-3"):
+    with ui.header(elevated=True).classes("items-center justify-between px-4 flex-wrap gap-2"):
+        with ui.column().classes("gap-0"):
             ui.label(f"{config.project_name} — vote").classes("text-h6")
             ui.label(f"voting as {evaluator}").classes("text-caption")
-        ui.button(
-            "See current results",
-            on_click=lambda: ui.navigate.to(f"/results/{project}/{get_join_token(project)}"),
-        ).props("outline")
+        with ui.row().classes("gap-2 flex-wrap"):
+            ui.button(
+                "See current results",
+                on_click=lambda: ui.navigate.to(f"/results/{project}/{get_join_token(project)}"),
+            ).props("outline").classes("min-h-10")
+            ui.button(
+                "See rankings",
+                icon="leaderboard",
+                on_click=lambda: ui.navigate.to(f"/?project={project}&tab=rankings"),
+            ).classes("min-h-10")
 
     with ui.column().classes("w-full max-w-3xl mx-auto px-4 py-4"):
         if app.storage.user.pop("welcome", False):
@@ -570,12 +588,14 @@ def _vote_body(project: str, config: ScoringConfig, evaluator: str) -> None:
         ).classes("text-caption")
         sliders: dict[str, ui.slider] = {}
         for feat in config.features:
-            with ui.row().classes("w-full items-center"):
-                ui.label(feat.label).classes("w-32")
+            with ui.row().classes(
+                "w-full items-start gap-1 flex-col sm:items-center sm:gap-0 sm:flex-row"
+            ):
+                ui.label(feat.label).classes("w-full sm:w-32")
                 s = (
                     ui.slider(min=0, max=5, step=1, value=ev_config.weights.get(feat.key, 3))
                     .props("label-always")
-                    .classes("flex-grow")
+                    .classes("w-full sm:w-auto sm:flex-grow")
                 )
                 sliders[feat.key] = s
 
@@ -613,8 +633,10 @@ def _vote_body(project: str, config: ScoringConfig, evaluator: str) -> None:
                 ev_inps: dict[str, ui.slider] = {}
                 with ui.column().classes("w-full gap-2"):
                     for feat in config.features:
-                        with ui.row().classes("w-full items-center"):
-                            ui.label(feat.label).classes("w-32")
+                        with ui.row().classes(
+                            "w-full items-start gap-1 flex-col sm:items-center sm:gap-0 sm:flex-row"
+                        ):
+                            ui.label(feat.label).classes("w-full sm:w-32")
                             s = (
                                 ui.slider(
                                     min=0,
@@ -623,7 +645,7 @@ def _vote_body(project: str, config: ScoringConfig, evaluator: str) -> None:
                                     value=float(opt.scores.get(evaluator, {}).get(feat.key, 0.0)),
                                 )
                                 .props("label-always")
-                                .classes("flex-grow")
+                                .classes("w-full sm:w-auto sm:flex-grow")
                             )
                             ev_inps[feat.key] = s
                 with ui.row().classes("w-full items-center gap-2 mt-2"):
@@ -770,8 +792,13 @@ def _logout() -> None:
 
 
 def _results_body(project: str, config: ScoringConfig) -> None:
-    with ui.header(elevated=True).classes("items-center justify-between px-4"):
+    with ui.header(elevated=True).classes("items-center justify-between px-4 flex-wrap gap-2"):
         ui.label(f"{config.project_name} — results").classes("text-h6")
+        ui.button(
+            "See rankings",
+            icon="leaderboard",
+            on_click=lambda: ui.navigate.to(f"/?project={project}&tab=rankings"),
+        ).props("outline")
     with ui.column().classes("w-full max-w-4xl mx-auto px-4 py-4"):
         _results_list(project, config, readonly=True)
 
@@ -813,6 +840,14 @@ def index():
 
     ui.dark_mode().enable()
     _init_state()
+    try:
+        q = ui.context.client.request.query_params
+    except Exception:
+        q = {}
+    projects = list_projects()
+    if projects and q.get("project") in projects:
+        _project_key = q["project"]
+        _config = load_config(_project_key)
 
     with ui.header(elevated=True).classes("items-center justify-between px-4"):
         with ui.row().classes("items-center gap-3"):
@@ -849,7 +884,9 @@ def index():
             tab_setup = ui.tab("Setup")
             tab_rankings = ui.tab("Rankings")
 
-        with ui.tab_panels(tabs, value=tab_setup) as panels:
+        with ui.tab_panels(
+            tabs, value=tab_rankings if q.get("tab") == "rankings" else tab_setup
+        ) as panels:
             _panels = panels
             _tab_rankings = tab_rankings
             with ui.tab_panel(tab_setup):
