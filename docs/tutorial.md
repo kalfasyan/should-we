@@ -1,5 +1,11 @@
 # Tutorial — Score Your First Thing
 
+> **Not using the CLI?** The hosted app at
+> [https://should-we.fly.dev](https://should-we.fly.dev) covers everything
+> below with a login screen, forms, and sliders — admins start at
+> "Using the hosted app" in the [README](../README.md). This tutorial is
+> the terminal version, plus the scoring math.
+
 First, [install pixi](https://pixi.prefix.dev/latest/installation/).
 
 Let's rank something. Could be a house, a car, a vacation spot — anything you
@@ -215,20 +221,31 @@ adds charts:
 
 1. **Setup tab** — type a project name and feature labels, or pick a
    template (apartment, car, laptop, vacation). Save Config.
-2. **Share the link** — a "Project ready!" dialog appears with the join
-   link. Copy it and send it to the group.
-3. **Everyone joins** — the join link asks for a name, then drops them on
+2. **Log in first** — the front page is a login screen for project owners
+   (`SHOULD_WE_ADMINS` in the environment; dev defaults ship with
+   `pixi run ui`). Everyone else only ever sees join/vote links.
+3. **Share the link** — a "Project ready!" dialog appears with the join
+   link. Copy it and send it to the group. New join links are valid
+   **30 days** — the Rankings tab shows the expiry date with an
+   "Extend 30 days" button.
+4. **Everyone joins** — the join link asks for a name, then drops them on
    their voting page: sliders for how much each feature matters to them,
    then an "Add an option" box with an optional link/note, and rating
    sliders (0–5, step 0.5) per option. Duplicate option names are blocked;
-   links/notes can be edited per option via "Save note".
-4. **Rankings tab** — bar chart of combined scores and an
+   links/notes can be edited per option via "Save note". First-time joiners
+   see a welcome card explaining the join link's validity window.
+5. **Rankings tab** — bar chart of combined scores and an
    options×people heatmap at the top (hover a cell for the score and note;
    a missing cell means that person hasn't voted). Below, the ranked list
    shows ✅/⏳ next to each person per option, and a 🤔 tag when people
    disagree strongly (standard deviation ≥ 1.5).
-5. **Share results** — a read-only results page at `/results/<project>`
-   shows the charts without the editing controls.
+6. **Share results** — the "Copy results link" button copies a secret link
+   (`/results/<project>/<join-token>`) that anyone with it can open
+   read-only. A bare `/results/<project>` URL only works for logged-in
+   admins.
+
+Deploying the app publicly (HTTPS, installable PWA, admin login) is covered
+in [docs/deploy.md](deploy.md).
 
 ---
 

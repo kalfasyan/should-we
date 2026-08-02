@@ -33,9 +33,53 @@ web UI, your call.
 - **Notes & links per option** — add a link or note next to any option, shown in the heatmap tooltip
 - **Disagreement marker** — options with widely split opinions are flagged in the rankings
 - **Templates** — one-click project start for apartments, cars, vacations, laptops
+- **Installable PWA** — "Add to Home Screen" on any phone: app icon, full-screen ([docs/deploy.md](docs/deploy.md))
+- **Admin login + expiring join links** — password-protected control room; join links stop accepting new people after 30 days (extend anytime)
 - **CLI + web UI** — dark-mode NiceGUI app (`pixi run ui`) with the same functionality
 - **JSON on disk** — projects are plain files under `data/`; edit and `reprocess`
 - **CSV export + read-only results page** — share or download the outcome
+
+## Using the hosted app
+
+The public instance is live at **https://should-we.fly.dev** — no install
+for voters, works in any phone browser, and installable as a full-screen
+PWA (Android: "Install app"; iOS: "Add to Home Screen").
+
+**As an admin (project owner):**
+
+1. Open https://should-we.fly.dev and log in with your admin name and
+   password (the ones set via `SHOULD_WE_ADMINS` — see
+   [docs/deploy.md](docs/deploy.md)).
+2. **Setup tab** → project name + feature labels (or pick a template) →
+   Save Config.
+3. **Rankings tab** → copy the **join link** and send it to your group. It
+   expires 30 days after the project is created — the date is shown with an
+   "Extend 30 days" button next to it.
+4. Watch the vote-status line fill in as people vote, then share the
+   **results link** ("Copy results link") when you're done.
+
+**As a group member:**
+
+1. Open the join link on your phone.
+2. Pick a name → set how much each feature matters to you → add options →
+   rate them (0–5 sliders).
+3. That's it — no account, no install. The welcome card explains how long
+   the join link stays valid.
+
+**FAQ**
+
+- **Do I have to pay?** No — the hosted app runs on Fly.io's free tier (one
+  small VM; signup requires a card but you're only billed if you scale up).
+  No domain needed: `should-we.fly.dev` is free.
+- **Do I need to deploy every time I want to use it?** No. `fly deploy` is
+  only for shipping code changes. The app runs on its own; it pauses when
+  nobody has it open and wakes in a few seconds on the next visit.
+- **Is there a link I can use?** https://should-we.fly.dev — plus one join
+  link and one results link per project (both copied from the Rankings tab).
+- **How does a new person get started?** Open the join link, pick a name,
+  vote. That's the whole onboarding.
+- **Where is the data?** On the Fly volume (encrypted, survives redeploys),
+  and locally in `data/` if you run the app on your own machine.
 
 ## Quick start (pixi)
 
@@ -125,6 +169,8 @@ name, sets how much each feature matters to them (sliders), then adds
 options and rates them with sliders — the vote-status line in Rankings
 updates live, and charts refresh on any reload.
 
+**Local** (same machine / LAN):
+
 ```bash
 docker build -t should-we .
 docker run -d -p 8080:8080 -v $(pwd)/data:/app/data should-we
@@ -136,9 +182,14 @@ Or with compose (same result, rebuilds as needed):
 docker compose up -d
 ```
 
+**Public + mobile (recommended):** the full deploy procedure — HTTPS,
+installable PWA, admin login, expiring join links — is in
+[docs/deploy.md](docs/deploy.md). The live app: `https://should-we.fly.dev`.
+
 - Data lives in `data/` on the host (volume). `SHOULD_WE_DATA` overrides it; `SHOULD_WE_HOST` sets the bind address (default `127.0.0.1`).
-- Serve behind HTTPS — voting links are bearer secrets (like password reset links). Regenerate a link to revoke it.
-- Read-only results page: `/results/<project>` (no token needed).
+- The web UI's admin area is password-protected: set `SHOULD_WE_ADMINS` (JSON map of admin name → password) and `SHOULD_WE_STORAGE_SECRET` (session signing), or nobody can log in (fail closed). Dev defaults ship in the `ui` pixi task; see [docs/deploy.md](docs/deploy.md).
+- Join links expire 30 days after a project is created — the Rankings tab shows the date with an "Extend 30 days" button. Expiry only blocks new joiners; existing members keep their voting links.
+- Results: `/results/<project>` requires admin login; the shareable link is `/results/<project>/<join-token>` (the "Copy results link" button gives it). Voting links are bearer secrets — regenerate a token to revoke that person.
 
 ## Configuration
 
@@ -162,6 +213,7 @@ Each project lives in its own subdirectory under `data/`
 - `features`: order matters for prompting. `key` is the machine identifier, `label` is shown to the user.
 - `evaluators`: one per person, created when they join via the join link. `weights` map feature keys to importance (0 = irrelevant, 5 = critical) and are set by each person on their voting page.
 - `voting_tokens` / `join_token`: per-person and per-project secrets for the links.
+- `join_expires_at`: ISO date when the join link stops accepting new people (created 30 days out; `null` or absent = never expires).
 
 Options live in `data/{project}/options.json` — edit by hand, then `pixi run reprocess`.
 
