@@ -1,7 +1,7 @@
 # Tutorial — Score Your First Thing
 
 > **Not using the CLI?** The hosted app at
-> [https://should-we.fly.dev](https://should-we.fly.dev) covers everything
+> [https://should-we.xyz](https://should-we.xyz) covers everything
 > below with a login screen, forms, and sliders — admins start at
 > "Using the hosted app" in the [README](../README.md). This tutorial is
 > the terminal version, plus the scoring math.

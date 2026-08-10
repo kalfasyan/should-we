@@ -41,13 +41,13 @@ web UI, your call.
 
 ## Using the hosted app
 
-The public instance is live at **https://should-we.fly.dev** — no install
+The public instance is live at **https://should-we.xyz** — no install
 for voters, works in any phone browser, and installable as a full-screen
 PWA (Android: "Install app"; iOS: "Add to Home Screen").
 
 **As an admin (project owner):**
 
-1. Open https://should-we.fly.dev and log in with your admin name and
+1. Open https://should-we.xyz and log in with your admin name and
    password (the ones set via `SHOULD_WE_ADMINS` — see
    [docs/deploy.md](docs/deploy.md)).
 2. **Setup tab** → project name + feature labels (or pick a template) →
@@ -68,18 +68,19 @@ PWA (Android: "Install app"; iOS: "Add to Home Screen").
 
 **FAQ**
 
-- **Do I have to pay?** No — the hosted app runs on Fly.io's free tier (one
-  small VM; signup requires a card but you're only billed if you scale up).
-  No domain needed: `should-we.fly.dev` is free.
-- **Do I need to deploy every time I want to use it?** No. `fly deploy` is
-  only for shipping code changes. The app runs on its own; it pauses when
-  nobody has it open and wakes in a few seconds on the next visit.
-- **Is there a link I can use?** https://should-we.fly.dev — plus one join
+- **Do I have to pay?** No — the hosted app runs on Oracle Cloud's Always
+  Free tier (a small always-on VM; no card required). Only the domain costs
+  a few dollars a year.
+- **Do I need to deploy every time I want to use it?** No. The app runs
+  24/7 on its own; shipping a code change is `git pull && docker compose
+  up -d --build` on the VM.
+- **Is there a link I can use?** https://should-we.xyz — plus one join
   link and one results link per project (both copied from the Rankings tab).
 - **How does a new person get started?** Open the join link, pick a name,
   vote. That's the whole onboarding.
-- **Where is the data?** On the Fly volume (encrypted, survives redeploys),
-  and locally in `data/` if you run the app on your own machine.
+- **Where is the data?** On the VM's disk at `/opt/should-we/data` (see
+  [docs/deploy.md](docs/deploy.md)), and locally in `data/` if you run the
+  app on your own machine.
 
 ## Quick start (pixi)
 
@@ -184,7 +185,7 @@ docker compose up -d
 
 **Public + mobile (recommended):** the full deploy procedure — HTTPS,
 installable PWA, admin login, expiring join links — is in
-[docs/deploy.md](docs/deploy.md). The live app: `https://should-we.fly.dev`.
+[docs/deploy.md](docs/deploy.md). The live app: `https://should-we.xyz`.
 
 - Data lives in `data/` on the host (volume). `SHOULD_WE_DATA` overrides it; `SHOULD_WE_HOST` sets the bind address (default `127.0.0.1`).
 - The web UI's admin area is password-protected: set `SHOULD_WE_ADMINS` (JSON map of admin name → password) and `SHOULD_WE_STORAGE_SECRET` (session signing), or nobody can log in (fail closed). Dev defaults ship in the `ui` pixi task; see [docs/deploy.md](docs/deploy.md).
