@@ -106,6 +106,18 @@ def _is_admin() -> bool:
         return False
 
 
+def _session_user() -> str | None:
+    try:
+        name = app.storage.user.get("name")
+    except RuntimeError:
+        return None
+    return name or None
+
+
+def _is_user_project(name: str | None, project: str) -> bool:
+    return bool(name) and _label_to_key(name) == project
+
+
 def _results_allowed(token: str, join_token: str, is_admin: bool) -> bool:
     return is_admin or bool(join_token) and secrets.compare_digest(token or "", join_token)
 
@@ -650,7 +662,7 @@ def _user_home(name: str) -> None:
         with ui.row().classes("items-center gap-2"):
             ui.badge("test user", color="secondary", outline=True).tooltip("Logged in as test user")
             ui.label(name).classes("text-caption")
-            ui.button("Logout", on_click=_logout, icon="logout").props("dense outline")
+            ui.button("Logout", on_click=_logout, icon="logout").props("outline")
     with ui.column().classes("w-full max-w-4xl mx-auto px-4 py-4"):
         _user_home_body(name, key)
 
@@ -760,11 +772,18 @@ def vote_page(project: str, token: str):
                 "See current results",
                 on_click=lambda: ui.navigate.to(f"/results/{project}/{get_join_token(project)}"),
             ).props("outline").classes("min-h-10")
-            ui.button(
-                "See rankings",
-                icon="leaderboard",
-                on_click=lambda: ui.navigate.to(f"/?project={project}&tab=rankings"),
-            ).classes("min-h-10")
+            if _is_user_project(_session_user(), project):
+                ui.button(
+                    "My project",
+                    icon="home",
+                    on_click=lambda: ui.navigate.to("/"),
+                ).classes("min-h-10")
+            else:
+                ui.button(
+                    "See rankings",
+                    icon="leaderboard",
+                    on_click=lambda: ui.navigate.to(f"/?project={project}&tab=rankings"),
+                ).classes("min-h-10")
 
     with ui.column().classes("w-full max-w-3xl mx-auto px-4 py-4"):
         if app.storage.user.pop("welcome", False):
@@ -1012,11 +1031,18 @@ def _logout() -> None:
 def _results_body(project: str, config: ScoringConfig) -> None:
     with ui.header(elevated=True).classes("items-center justify-between px-4 flex-wrap gap-2"):
         ui.label(f"{config.project_name} — results").classes("text-h6")
-        ui.button(
-            "See rankings",
-            icon="leaderboard",
-            on_click=lambda: ui.navigate.to(f"/?project={project}&tab=rankings"),
-        ).props("outline")
+        with ui.row().classes("items-center gap-2"):
+            if _is_user_project(_session_user(), project):
+                ui.button(
+                    "My project",
+                    icon="home",
+                    on_click=lambda: ui.navigate.to("/"),
+                ).props("outline")
+            ui.button(
+                "See rankings",
+                icon="leaderboard",
+                on_click=lambda: ui.navigate.to(f"/?project={project}&tab=rankings"),
+            ).props("outline")
     with ui.column().classes("w-full max-w-4xl mx-auto px-4 py-4"):
         _results_list(project, config, readonly=True)
 
@@ -1086,7 +1112,7 @@ def index():
                     "Logged in as project owner"
                 )
                 ui.label(admin_name).classes("text-caption")
-            ui.button("Logout", on_click=_logout, icon="logout").props("dense outline")
+            ui.button("Logout", on_click=_logout, icon="logout").props("outline")
         projects = list_projects()
         if projects:
             with ui.row().classes("items-center gap-2"):
