@@ -1052,9 +1052,21 @@ def join_page(project: str, token: str):
     with ui.column().classes(
         "items-center justify-center min-h-screen gap-2 w-full max-w-2xl mx-auto px-4"
     ):
-        ui.markdown(
-            "Pick a name — then you'll set your weights and can vote on every option."
-        ).classes("text-center")
+        with ui.card().classes("w-full text-center"):
+            ui.markdown(f"### 👋 You've been invited to **{config.project_name}**").classes("mb-1")
+            ui.label(
+                "Say what's important to you, then let's get voting — "
+                "everyone's priorities combine into one clear ranking."
+            ).classes("text-caption")
+            with ui.row().classes("justify-center gap-2 flex-wrap"):
+                for step in (
+                    "1️⃣ Pick a name",
+                    "2️⃣ Set your priorities",
+                    "3️⃣ Add & rate options",
+                    "4️⃣ See the ranking 🎉",
+                ):
+                    ui.label(step).classes("text-caption")
+        ui.markdown("Pick a name below to get started.").classes("text-center text-caption")
         name_inp = ui.input("Your name (e.g. Alice)").classes("w-full sm:w-64")
 
         def _join():
@@ -1091,10 +1103,17 @@ def _bad_link() -> None:
 def _login_page() -> None:
     ui.dark_mode().enable()
     with ui.column().classes(
-        "items-center justify-center min-h-screen gap-2 w-full max-w-sm mx-auto px-4"
+        "items-center justify-center min-h-screen gap-2 w-full max-w-md mx-auto px-4"
     ):
         ui.image("/pwa/icon-192.png").classes("w-24")
         ui.markdown("### should-we").classes("mb-2")
+        ui.label("Decide together, without the debate.").classes("text-caption text-grey-6")
+        with ui.card().classes("w-full text-center"):
+            ui.markdown("#### 🧭 How it works").classes("mb-1")
+            ui.label("Step 1: Say what's important to you ⚖️").classes("text-caption")
+            ui.label("Step 2: Add the options you're weighing 🤔").classes("text-caption")
+            ui.label("Step 3: Vote together 🗳️").classes("text-caption")
+            ui.label("Step 4: Profit — know what you should do 🎉").classes("text-caption")
         ui.label("Log in as a project owner or test user.").classes("text-caption text-grey-6")
         name_inp = ui.input("Name").classes("w-full")
         pw_inp = ui.input("Password", password=True, password_toggle_button=True).classes("w-full")
