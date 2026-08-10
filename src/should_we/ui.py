@@ -408,9 +408,7 @@ def _results_list(project: str, config: ScoringConfig, *, readonly: bool = False
                 )
                 action_row.set_visibility(True)
 
-            ui.upload(on_upload=_on_import_upload, auto_upload=True, max_files=1).props(
-                'accept=".json"'
-            )
+            ui.upload(on_upload=_on_import_upload, auto_upload=True, max_files=1)
 
             def _do_import():
                 nonlocal parsed
