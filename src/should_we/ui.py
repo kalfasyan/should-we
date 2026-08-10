@@ -38,6 +38,7 @@ from .storage import (
     save_vote,
     update_notes,
 )
+from .users import create_user, delete_user, load_users, verify_user
 
 _assets = Path(__file__).resolve().parent.parent.parent / "docs" / "assets"
 if _assets.is_dir():
@@ -87,6 +88,15 @@ def _admins() -> dict[str, str]:
 def _check_login(name: str | None, password: str | None) -> bool:
     expected = _admins().get((name or "").strip())
     return bool(expected) and secrets.compare_digest(expected, password or "")
+
+
+def _login_role(name: str | None, password: str | None) -> str | None:
+    """Admin credentials win; otherwise fall back to test-user accounts."""
+    if _check_login(name, password):
+        return "admin"
+    if verify_user(name or "", password or ""):
+        return "user"
+    return None
 
 
 def _is_admin() -> bool:
@@ -148,7 +158,7 @@ def _do_delete(dialog):
         setup_panel.refresh()
 
 
-def _option_delete_dialog(name: str) -> ui.dialog:
+def _option_delete_dialog(name: str, project: str) -> ui.dialog:
     with ui.dialog() as dialog, ui.card():
         ui.label(f"Delete option '{name}'?").classes("text-h6")
         ui.label("This cannot be undone.")
@@ -156,19 +166,21 @@ def _option_delete_dialog(name: str) -> ui.dialog:
             ui.button("Cancel", on_click=dialog.close)
             ui.button(
                 "Delete",
-                on_click=lambda: _do_delete_option(dialog, name),
+                on_click=lambda: _do_delete_option(dialog, name, project),
                 color="red",
             )
     return dialog
 
 
-def _do_delete_option(dialog, name: str) -> None:
-    if not _project_key:
+def _do_delete_option(dialog, name: str, project: str | None = None) -> None:
+    project = project or _project_key
+    if not project:
         return
-    delete_option(name, _project_key)
+    delete_option(name, project)
     dialog.close()
     ui.notify(f"Deleted option '{name}'.", type="warning")
     rankings_panel.refresh()
+    _user_home_body.refresh()
 
 
 def _score_bar(value: float) -> None:
@@ -266,8 +278,10 @@ def _invite_card(project: str, config: ScoringConfig) -> None:
 def _extend_link(project: str) -> None:
     global _config
     expires = extend_join_link(project)
-    _config = load_config(project)
+    if _project_key == project:
+        _config = load_config(project)
     rankings_panel.refresh()
+    _user_home_body.refresh()
     ui.notify(f"Join link extended to {expires}.", type="positive")
 
 
@@ -329,7 +343,7 @@ def _results_list(project: str, config: ScoringConfig, *, readonly: bool = False
                             _score_bar(score)
                             ui.label(f"{score:.3f}").classes("w-14 text-right")
                 if not readonly:
-                    del_dialog = _option_delete_dialog(opt.name)
+                    del_dialog = _option_delete_dialog(opt.name, project)
                     ui.button(icon="delete", on_click=del_dialog.open).props(
                         "flat round size=sm"
                     ).classes("text-red").tooltip("Delete option")
@@ -343,11 +357,15 @@ def _results_list(project: str, config: ScoringConfig, *, readonly: bool = False
                 ),
                 icon="link",
             ).props("outline")
-            ui.button("Reprocess", on_click=_reprocess, icon="refresh")
+            ui.button(
+                "Reprocess",
+                on_click=lambda p=project: _reprocess(p),
+                icon="refresh",
+            )
             ui.button(
                 "Export CSV",
                 on_click=lambda: ui.download(
-                    _csv_content(project, sorted_opts), f"{project}-rankings.csv"
+                    _csv_content(config, sorted_opts), f"{project}-rankings.csv"
                 ),
                 icon="download",
             )
@@ -413,19 +431,21 @@ def _charts_body(sorted_opts, config: ScoringConfig) -> None:
         ).classes("w-full h-72")
 
 
-def _reprocess() -> None:
-    reprocess_all(_project_key)
+def _reprocess(project: str | None = None) -> None:
+    reprocess_all(project or _project_key)
     rankings_panel.refresh()
+    _user_home_body.refresh()
 
 
 def _regenerate(evaluator: str, project: str) -> None:
     regenerate_token(project, evaluator)
     ui.notify(f"New link created for {evaluator}.")
     rankings_panel.refresh()
+    _user_home_body.refresh()
 
 
-def _csv_content(project: str, options) -> str:
-    ev_names = [ev.name for ev in _config.evaluators] if _config else []
+def _csv_content(config: ScoringConfig, options) -> str:
+    ev_names = [ev.name for ev in config.evaluators]
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(["option", "combined"] + ev_names)
@@ -522,10 +542,187 @@ def setup_panel():
     ui.button("Save Config", on_click=_save_config, icon="save")
 
 
+@ui.refreshable
+def test_users_panel():
+    with ui.card().classes("w-full mb-4"):
+        with ui.column().classes("gap-1"):
+            ui.markdown("### 🧪 Test users").classes("mb-2")
+            ui.label(
+                "Each test user gets their own private project — no admin powers. "
+                "The password is shown once; only its hash is stored."
+            )
+    new_name = ui.input("Name").classes("w-full sm:w-64")
+
+    def _create():
+        password, error = create_user(new_name.value)
+        if error:
+            ui.notify(error, type="negative")
+            return
+        created_name = new_name.value.strip()
+        new_name.value = ""
+        test_users_panel.refresh()
+        with ui.dialog() as cred_dialog, ui.card():
+            ui.markdown("### 🔑 Test user created").classes("mb-1")
+            ui.label(f"Name: {created_name}").classes("text-caption")
+            ui.input(value=password).props("readonly").classes("w-full")
+            ui.label("Share name + password once — it cannot be shown again.").classes(
+                "text-caption text-warning"
+            )
+            with ui.row().classes("justify-end gap-2 mt-4"):
+                ui.button(
+                    "Copy password",
+                    on_click=lambda: _copy_text(password, "Password copied"),
+                    icon="copy",
+                ).props("outline")
+                ui.button("Done", on_click=cred_dialog.close)
+        cred_dialog.open()
+
+    ui.button("Create user", on_click=_create, icon="person_add")
+
+    users = load_users()
+    if not users:
+        ui.label("No test users yet.").classes("text-caption text-grey-6")
+        return
+    ui.markdown("#### 👥 Existing test users").classes("mt-4 mb-1")
+    for name in sorted(users):
+        with ui.row().classes("w-full items-center gap-2"):
+            ui.label(name).classes("flex-grow")
+            with ui.dialog() as del_dialog, ui.card():
+                ui.markdown(f"### Delete {name}?").classes("mb-1")
+                also_proj = ui.checkbox("Also delete their project")
+                with ui.row().classes("justify-end gap-2 mt-4"):
+                    ui.button("Cancel", on_click=del_dialog.close)
+                    ui.button(
+                        "Delete",
+                        color="red",
+                        on_click=lambda d=del_dialog, n=name, c=also_proj: _do_delete_user(
+                            d, n, c.value
+                        ),
+                    )
+            ui.button(icon="delete", on_click=del_dialog.open).props("flat round size=sm").classes(
+                "text-red"
+            )
+
+
+def _do_delete_user(dialog, name: str, also_project: bool) -> None:
+    delete_user(name)
+    if also_project:
+        delete_project(_label_to_key(name))
+    dialog.close()
+    ui.notify(f"User '{name}' deleted.", type="warning")
+    test_users_panel.refresh()
+
+
 def _go_rankings(dialog) -> None:
     dialog.close()
     if _panels is not None and _tab_rankings is not None:
         _panels.value = _tab_rankings
+
+
+def _vote_as_user(project: str, name: str) -> None:
+    add_evaluator(project, name)
+    ui.navigate.to(f"/vote/{project}/{get_or_create_token(project, name)}")
+
+
+def _user_home(name: str) -> None:
+    if name not in load_users():
+        app.storage.user.clear()
+        _login_page()
+        return
+    ui.dark_mode().enable()
+    key = _label_to_key(name)
+    with ui.header(elevated=True).classes("items-center justify-between px-4"):
+        with ui.row().classes("items-center gap-3"):
+            ui.image("/assets/logo.png").classes("w-9")
+            ui.label("should-we").classes("text-h5")
+        with ui.row().classes("items-center gap-2"):
+            ui.label(name).classes("text-caption")
+            ui.button("Logout", on_click=_logout, icon="logout").props("flat dense")
+    with ui.column().classes("w-full max-w-4xl mx-auto px-4 py-4"):
+        _user_home_body(name, key)
+
+
+@ui.refreshable
+def _user_home_body(name: str, key: str) -> None:
+    try:
+        config = load_config(key)
+    except SystemExit:
+        config = None
+    if config is None or config.owner != name:
+        _user_create_form(name, key)
+        return
+    _invite_card(key, config)
+    _results_list(key, config)
+    with ui.row().classes("gap-2 items-center"):
+        ui.button(
+            "Vote & add options",
+            icon="how_to_vote",
+            on_click=lambda: _vote_as_user(key, name),
+        ).props("unelevated")
+        ui.button(
+            "Copy results link",
+            icon="link",
+            on_click=lambda: _copy_text(
+                _abs_url(f"results/{key}/{get_join_token(key)}"), "Results link copied"
+            ),
+        ).props("outline")
+
+
+def _user_create_form(name: str, key: str) -> None:
+    with ui.card().classes("w-full mb-4"):
+        with ui.column().classes("gap-1"):
+            ui.markdown("### 🛠️ Create your project").classes("mb-2")
+            ui.label(f"Your project lives at '{key}' — only you can see it.")
+            ui.label("1. Enter the features you care about (one per line).")
+            ui.label("2. Click Create — then share your join link from the Rankings view.")
+    ui.input("Project name", value=name).props("readonly").classes("w-full sm:w-64")
+    feature_labels = ui.textarea("Feature labels (one per line)").classes("w-full sm:w-64")
+
+    template_dir = Path(__file__).resolve().parent / "templates"
+    templates = sorted(template_dir.glob("*.json")) if template_dir.is_dir() else []
+
+    def _apply_template(path: Path) -> None:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        feature_labels.value = "\n".join(f["label"] for f in raw["features"])
+        ui.notify(f"Template '{path.stem}' loaded — adjust and save.", type="positive")
+
+    if templates:
+        with ui.row().classes("items-center gap-2 mb-2"):
+            ui.select(
+                label="Start from template",
+                options={p.stem: p.stem for p in templates},
+                on_change=lambda e: _apply_template(template_dir / f"{e.value}.json"),
+            ).classes("w-full sm:w-56")
+
+    def _save():
+        feat_labels = [
+            label.strip() for label in feature_labels.value.strip().split("\n") if label.strip()
+        ]
+        if not feat_labels:
+            ui.notify("Enter at least one feature.", type="negative")
+            return
+        try:
+            existing = load_config(key)
+        except SystemExit:
+            existing = None
+        if existing is not None and existing.owner != name:
+            ui.notify(f"Project '{key}' already exists and isn't yours.", type="negative")
+            return
+        features = [Feature(key=_label_to_key(label), label=label) for label in feat_labels]
+        save_config(
+            ScoringConfig(
+                project_name=name,
+                features=features,
+                evaluators=[],
+                join_expires_at=default_join_expiry(),
+                owner=name,
+            ),
+            project=key,
+        )
+        ui.notify(f"Project '{name}' created!", type="positive")
+        _user_home_body.refresh()
+
+    ui.button("Create project", on_click=_save, icon="save")
 
 
 @ui.page("/vote/{project}/{token}")
@@ -769,18 +966,26 @@ def _login_page() -> None:
     ):
         ui.image("/pwa/icon-192.png").classes("w-24")
         ui.markdown("### should-we").classes("mb-2")
-        ui.label("Admin area — for project owners only.").classes("text-caption text-grey-6")
-        name_inp = ui.input("Admin name").classes("w-full")
+        ui.label("Log in as a project owner or test user.").classes("text-caption text-grey-6")
+        name_inp = ui.input("Name").classes("w-full")
         pw_inp = ui.input("Password", password=True, password_toggle_button=True).classes("w-full")
 
         def _try_login():
-            if not _admins():
-                ui.notify("No admins configured — set SHOULD_WE_ADMINS.", type="negative")
+            role = _login_role(name_inp.value, pw_inp.value)
+            if not role:
+                if not _admins() and not load_users():
+                    ui.notify(
+                        "No accounts configured — set SHOULD_WE_ADMINS or create test users.",
+                        type="negative",
+                    )
+                else:
+                    ui.notify("Wrong name or password.", type="negative")
                 return
-            if not _check_login(name_inp.value, pw_inp.value):
-                ui.notify("Wrong name or password.", type="negative")
-                return
-            app.storage.user["admin"] = name_inp.value.strip()
+            name = (name_inp.value or "").strip()
+            app.storage.user["role"] = role
+            app.storage.user["name"] = name
+            if role == "admin":
+                app.storage.user["admin"] = name
             ui.navigate.reload()
 
         ui.button("Log in", on_click=_try_login, icon="login").classes("w-full")
@@ -834,7 +1039,15 @@ def results_admin_page(project: str):
 @ui.page("/", title="should-we", favicon="/assets/logo.png")
 def index():
     if not _is_admin():
-        _login_page()
+        name = None
+        try:
+            name = app.storage.user.get("name")
+        except RuntimeError:
+            name = None
+        if name:
+            _user_home(name)
+        else:
+            _login_page()
         return
     global _dropdown, _panels, _tab_rankings, _project_key, _config
 
@@ -883,6 +1096,7 @@ def index():
         with ui.tabs() as tabs:
             tab_setup = ui.tab("Setup")
             tab_rankings = ui.tab("Rankings")
+            tab_users = ui.tab("Test users")
 
         with ui.tab_panels(
             tabs, value=tab_rankings if q.get("tab") == "rankings" else tab_setup
@@ -893,6 +1107,8 @@ def index():
                 setup_panel()
             with ui.tab_panel(tab_rankings):
                 rankings_panel()
+            with ui.tab_panel(tab_users):
+                test_users_panel()
 
 
 def run():

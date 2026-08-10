@@ -34,6 +34,7 @@ class ScoringConfig:
     voting_tokens: dict[str, str] = field(default_factory=dict)
     join_token: str | None = None
     join_expires_at: str | None = None
+    owner: str | None = None
 
 
 DEFAULT_LINK_DAYS = 30
@@ -103,6 +104,7 @@ def load_config(project: str | None = None) -> ScoringConfig:
         voting_tokens=raw.get("voting_tokens", {}),
         join_token=raw.get("join_token"),
         join_expires_at=raw.get("join_expires_at"),
+        owner=raw.get("owner"),
     )
 
 
@@ -116,6 +118,7 @@ def save_config(config: ScoringConfig, project: str | None = None) -> None:
         "voting_tokens": config.voting_tokens,
         "join_token": config.join_token,
         "join_expires_at": config.join_expires_at,
+        "owner": config.owner,
     }
     cfg_path.parent.mkdir(parents=True, exist_ok=True)
     cfg_path.write_text(json.dumps(data, indent=2, sort_keys=False) + "\n", encoding="utf-8")
