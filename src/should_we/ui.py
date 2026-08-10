@@ -551,6 +551,27 @@ def test_users_panel():
                 "Each test user gets their own private project — no admin powers. "
                 "The password is shown once; only its hash is stored."
             )
+    with ui.dialog() as cred_dialog, ui.card():
+        ui.markdown("### 🔑 Test user created").classes("mb-1")
+        cred_name = ui.label().classes("text-caption")
+        cred_password = ui.input().props("readonly").classes("w-full")
+        ui.label("Share name + password once — it cannot be shown again.").classes(
+            "text-caption text-warning"
+        )
+        with ui.row().classes("justify-end gap-2 mt-4"):
+            ui.button(
+                "Copy password",
+                on_click=lambda: _copy_text(cred_password.value, "Password copied"),
+                icon="copy",
+            ).props("outline")
+            ui.button("Done", on_click=cred_dialog.close)
+
+    def _refresh_list_on_close(e) -> None:
+        if not e.value:
+            test_users_panel.refresh()
+
+    cred_dialog.on_value_change(_refresh_list_on_close)
+
     new_name = ui.input("Name").classes("w-full sm:w-64")
 
     def _create():
@@ -562,23 +583,10 @@ def test_users_panel():
         if error:
             ui.notify(error, type="negative")
             return
-        created_name = new_name.value.strip()
+        created_name = (new_name.value or "").strip()
         new_name.value = ""
-        test_users_panel.refresh()
-        with ui.dialog() as cred_dialog, ui.card():
-            ui.markdown("### 🔑 Test user created").classes("mb-1")
-            ui.label(f"Name: {created_name}").classes("text-caption")
-            ui.input(value=password).props("readonly").classes("w-full")
-            ui.label("Share name + password once — it cannot be shown again.").classes(
-                "text-caption text-warning"
-            )
-            with ui.row().classes("justify-end gap-2 mt-4"):
-                ui.button(
-                    "Copy password",
-                    on_click=lambda: _copy_text(password, "Password copied"),
-                    icon="copy",
-                ).props("outline")
-                ui.button("Done", on_click=cred_dialog.close)
+        cred_name.text = f"Name: {created_name}"
+        cred_password.value = password
         cred_dialog.open()
 
     ui.button("Create user", on_click=_create, icon="person_add")
@@ -642,7 +650,7 @@ def _user_home(name: str) -> None:
         with ui.row().classes("items-center gap-2"):
             ui.badge("test user", color="secondary", outline=True).tooltip("Logged in as test user")
             ui.label(name).classes("text-caption")
-            ui.button("Logout", on_click=_logout, icon="logout").props("flat dense")
+            ui.button("Logout", on_click=_logout, icon="logout").props("dense outline")
     with ui.column().classes("w-full max-w-4xl mx-auto px-4 py-4"):
         _user_home_body(name, key)
 
@@ -1078,7 +1086,7 @@ def index():
                     "Logged in as project owner"
                 )
                 ui.label(admin_name).classes("text-caption")
-            ui.button("Logout", on_click=_logout, icon="logout").props("flat dense")
+            ui.button("Logout", on_click=_logout, icon="logout").props("dense outline")
         projects = list_projects()
         if projects:
             with ui.row().classes("items-center gap-2"):
