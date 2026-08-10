@@ -252,6 +252,17 @@ def test_extend_join_link_roundtrip(monkeypatch, tmp_path):
     assert load_config("test-project").join_expires_at == expires
     assert join_link_days_left(load_config("test-project")) == 30
 
+    expires = extend_join_link("test-project")
+    assert expires == (date.today() + timedelta(days=60)).isoformat()
+    assert join_link_days_left(load_config("test-project")) == 60
+
+    stale = replace(
+        load_config("test-project"),
+        join_expires_at=(date.today() - timedelta(days=1)).isoformat(),
+    )
+    save_config(stale, project="test-project")
+    assert extend_join_link("test-project") == (date.today() + timedelta(days=29)).isoformat()
+
 
 def test_export_import_roundtrip(monkeypatch, tmp_path):
     monkeypatch.setenv("SHOULD_WE_DATA", str(tmp_path))

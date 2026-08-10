@@ -155,7 +155,13 @@ def get_join_token(project: str) -> str:
 
 def extend_join_link(project: str, days: int = DEFAULT_LINK_DAYS) -> str:
     config = load_config(project)
-    expires_at = (date.today() + timedelta(days=days)).isoformat()
+    try:
+        base = (
+            date.fromisoformat(config.join_expires_at) if config.join_expires_at else date.today()
+        )
+    except ValueError:  # unreadable date → start from today
+        base = date.today()
+    expires_at = (base + timedelta(days=days)).isoformat()
     save_config(replace(config, join_expires_at=expires_at), project=project)
     return expires_at
 
