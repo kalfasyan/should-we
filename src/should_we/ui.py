@@ -836,7 +836,7 @@ def index():
     if not _is_admin():
         _login_page()
         return
-    global _dropdown, _panels, _tab_rankings
+    global _dropdown, _panels, _tab_rankings, _project_key, _config
 
     ui.dark_mode().enable()
     _init_state()
