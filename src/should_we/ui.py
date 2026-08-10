@@ -554,7 +554,11 @@ def test_users_panel():
     new_name = ui.input("Name").classes("w-full sm:w-64")
 
     def _create():
-        password, error = create_user(new_name.value)
+        try:
+            password, error = create_user(new_name.value)
+        except OSError as e:
+            ui.notify(f"Could not write the users file: {e}", type="negative")
+            return
         if error:
             ui.notify(error, type="negative")
             return
@@ -636,6 +640,7 @@ def _user_home(name: str) -> None:
             ui.image("/assets/logo.png").classes("w-9")
             ui.label("should-we").classes("text-h5")
         with ui.row().classes("items-center gap-2"):
+            ui.badge("test user", color="secondary", outline=True).tooltip("Logged in as test user")
             ui.label(name).classes("text-caption")
             ui.button("Logout", on_click=_logout, icon="logout").props("flat dense")
     with ui.column().classes("w-full max-w-4xl mx-auto px-4 py-4"):
@@ -1067,6 +1072,12 @@ def index():
             ui.image("/assets/logo.png").classes("w-9")
             ui.label("should-we").classes("text-h5")
         with ui.row().classes("items-center gap-2"):
+            admin_name = app.storage.user.get("name")
+            if admin_name:
+                ui.badge("admin", color="positive", outline=True).tooltip(
+                    "Logged in as project owner"
+                )
+                ui.label(admin_name).classes("text-caption")
             ui.button("Logout", on_click=_logout, icon="logout").props("flat dense")
         projects = list_projects()
         if projects:

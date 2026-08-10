@@ -36,9 +36,9 @@ def hash_password(password: str, salt: str) -> str:
     return hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), _PBKDF2_ITERATIONS).hex()
 
 
-def create_user(name: str) -> tuple[str, str | None]:
+def create_user(name: str | None) -> tuple[str, str | None]:
     """Create a test user; returns (password, error). Password is shown once, hash stored."""
-    name = name.strip()
+    name = (name or "").strip()
     if not name:
         return "", "Name required."
     users = load_users()
