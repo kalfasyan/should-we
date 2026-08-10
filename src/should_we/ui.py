@@ -5,6 +5,7 @@ import io
 import json
 import os
 import secrets
+from dataclasses import replace
 from pathlib import Path
 
 from nicegui import app, ui
@@ -29,8 +30,11 @@ from .config import (
 )
 from .scoring import compute_combined, disagreement
 from .storage import (
+    _validate_export_data,
     delete_option,
+    export_project,
     find_option,
+    import_project,
     load_options,
     load_votes,
     reprocess_all,
@@ -378,6 +382,64 @@ def _results_list(project: str, config: ScoringConfig, *, readonly: bool = False
                     ).classes("text-red").tooltip("Delete option")
 
     if not readonly:
+        parsed: dict | None = None
+
+        with ui.dialog() as import_dialog, ui.card():
+            ui.markdown("### 📦 Import data").classes("mb-1")
+            ui.label(
+                "Imports a should-we export as a new project."
+                if _is_admin()
+                else "This replaces all your project's data."
+            ).classes("text-caption")
+            status_label = ui.label().classes("text-caption text-primary mt-1")
+
+            async def _on_import_upload(e):
+                nonlocal parsed
+                try:
+                    parsed = json.loads((await e.file.read()).decode("utf-8"))
+                    _validate_export_data(parsed)
+                except (ValueError, UnicodeDecodeError):
+                    ui.notify("Not a valid should-we export.", type="negative")
+                    parsed = None
+                    return
+                status_label.text = (
+                    f"Bundle OK: {parsed['config']['project_name']} · "
+                    f"{len(parsed['options'])} options"
+                )
+                action_row.set_visibility(True)
+
+            ui.upload(on_upload=_on_import_upload, auto_upload=True, max_files=1).props(
+                'accept=".json"'
+            )
+
+            def _do_import():
+                nonlocal parsed
+                if not parsed:
+                    return
+                if _is_admin():
+                    key = _label_to_key(parsed["config"]["project_name"])
+                    if key in list_projects():
+                        ui.notify(f"Project '{key}' already exists.", type="negative")
+                        return
+                    import_project(key, parsed)
+                    _set_project(key)
+                    ui.notify(
+                        f"Imported project '{parsed['config']['project_name']}'.",
+                        type="positive",
+                    )
+                else:
+                    name = _session_user()
+                    import_project(project, parsed)
+                    save_config(replace(load_config(project), owner=name), project=project)
+                    _user_home_body.refresh()
+                    ui.notify("Your project data was replaced.", type="positive")
+                import_dialog.close()
+
+            with ui.row().classes("justify-end gap-2 mt-4 flex-wrap") as action_row:
+                ui.button("Cancel", on_click=import_dialog.close)
+                ui.button("Import", on_click=_do_import)
+            action_row.set_visibility(False)
+
         with ui.row().classes("flex-col sm:flex-row gap-2 sm:items-center"):
             ui.button(
                 "Copy results link",
@@ -397,6 +459,18 @@ def _results_list(project: str, config: ScoringConfig, *, readonly: bool = False
                     _csv_content(config, sorted_opts), f"{project}-rankings.csv"
                 ),
                 icon="download",
+            ).classes("w-full sm:w-auto")
+            ui.button(
+                "Export data",
+                on_click=lambda p=project: ui.download(
+                    json.dumps(export_project(p), indent=2) + "\n", f"{p}-export.json"
+                ),
+                icon="file_download",
+            ).classes("w-full sm:w-auto")
+            ui.button(
+                "Import data",
+                on_click=import_dialog.open,
+                icon="file_upload",
             ).classes("w-full sm:w-auto")
         # ponytail: poll only the tiny status line, never the list itself —
         # rebuilding expansions every few seconds makes them unclickable

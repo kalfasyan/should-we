@@ -4,6 +4,8 @@ import json
 from dataclasses import replace
 from datetime import date, timedelta
 
+import pytest
+
 from should_we.config import (
     Evaluator,
     Feature,
@@ -24,6 +26,8 @@ from should_we.config import (
 from should_we.scoring import compute_combined, compute_scores, disagreement
 from should_we.storage import (
     delete_option,
+    export_project,
+    import_project,
     load_options,
     load_votes,
     reprocess_all,
@@ -247,6 +251,38 @@ def test_extend_join_link_roundtrip(monkeypatch, tmp_path):
     assert expires == (date.today() + timedelta(days=30)).isoformat()
     assert load_config("test-project").join_expires_at == expires
     assert join_link_days_left(load_config("test-project")) == 30
+
+
+def test_export_import_roundtrip(monkeypatch, tmp_path):
+    monkeypatch.setenv("SHOULD_WE_DATA", str(tmp_path))
+    save_config(_make_config(), project="test-project")
+    save_option(
+        "home-a",
+        {
+            "Alice": {"price": 5, "color": 5, "eco": 5},
+            "Bob": {"price": 4, "color": 4, "eco": 4},
+        },
+        project="test-project",
+        notes="https://a.example",
+    )
+    save_vote("test-project", "Bob", "home-a", {"price": 4, "color": 4, "eco": 4})
+
+    bundle = export_project("test-project")
+    assert bundle["format"] == "should-we-results"
+    assert bundle["version"] == 1
+
+    assert import_project("imported-project", bundle) == 1
+    assert load_config("imported-project").project_name == "test-project"
+    opt = load_options("imported-project")[0]
+    assert opt.name == "home-a"
+    assert opt.scores["Alice"]["price"] == 5.0
+    assert opt.scores["Bob"]["price"] == 4.0
+    assert round(opt.breakdown["Alice"], 3) == 5.0
+    assert opt.notes == "https://a.example"
+    assert "home-a" in load_votes("imported-project")["Bob"]
+
+    with pytest.raises(ValueError):
+        import_project("junk", {"format": "nope"})
 
 
 def test_default_join_expiry_is_30_days_out():

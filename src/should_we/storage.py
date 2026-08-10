@@ -26,7 +26,7 @@ def _read_json(path: Path) -> list[dict]:
     return raw if isinstance(raw, list) else []
 
 
-def _write_json(path: Path, payload: list[dict]) -> None:
+def _write_json(path: Path, payload: list[dict] | dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=False) + "\n", encoding="utf-8")
 
@@ -174,6 +174,46 @@ def load_votes(project: str | None = None) -> dict[str, dict[str, str]]:
         return {}
     raw = json.loads(path.read_text(encoding="utf-8"))
     return raw if isinstance(raw, dict) else {}
+
+
+def _validate_export_data(data) -> None:
+    """Raise ValueError unless data is a valid should-we results bundle."""
+    if (
+        not isinstance(data, dict)
+        or data.get("format") != "should-we-results"
+        or not isinstance(data.get("version"), int)
+        or not isinstance(data.get("config"), dict)
+        or not isinstance(data["config"].get("features"), list)
+        or not data["config"]["features"]
+        or not isinstance(data["config"].get("project_name"), str)
+        or not data["config"]["project_name"].strip()
+        or not isinstance(data.get("options"), list)
+        or not isinstance(data.get("votes"), dict)
+    ):
+        raise ValueError("Not a valid should-we export.")
+
+
+def export_project(project: str) -> dict:
+    project = resolve_project(project)
+    cfg_path, opt_path = project_paths(project)
+    return {
+        "format": "should-we-results",
+        "version": 1,
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "config": json.loads(cfg_path.read_text(encoding="utf-8")),
+        "options": _read_json(opt_path),
+        "votes": load_votes(project),
+    }
+
+
+def import_project(project: str, data: dict) -> int:
+    """Write a validated export bundle into project; returns the option count."""
+    _validate_export_data(data)
+    cfg_path, opt_path = project_paths(project)
+    _write_json(cfg_path, data["config"])
+    _write_json(opt_path, data["options"])
+    _write_json(_votes_path(project), data["votes"])
+    return len(data["options"])
 
 
 def save_vote(
