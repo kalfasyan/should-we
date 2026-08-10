@@ -662,7 +662,9 @@ def _user_home(name: str) -> None:
         with ui.row().classes("items-center gap-2"):
             ui.badge("test user", color="secondary", outline=True).tooltip("Logged in as test user")
             ui.label(name).classes("text-caption")
-            ui.button("Logout", on_click=_logout, icon="logout").props("outline")
+            ui.button("Logout", on_click=_logout, icon="logout", color="white").props(
+                "unelevated"
+            ).classes("text-black")
     with ui.column().classes("w-full max-w-4xl mx-auto px-4 py-4"):
         _user_home_body(name, key)
 
@@ -1112,7 +1114,9 @@ def index():
                     "Logged in as project owner"
                 )
                 ui.label(admin_name).classes("text-caption")
-            ui.button("Logout", on_click=_logout, icon="logout").props("outline")
+            ui.button("Logout", on_click=_logout, icon="logout", color="white").props(
+                "unelevated"
+            ).classes("text-black")
         projects = list_projects()
         if projects:
             with ui.row().classes("items-center gap-2"):
