@@ -456,14 +456,15 @@ def _results_list(project: str, config: ScoringConfig, *, readonly: bool = False
             ui.button(
                 "Export CSV",
                 on_click=lambda: ui.download(
-                    _csv_content(config, sorted_opts), f"{project}-rankings.csv"
+                    _csv_content(config, sorted_opts).encode("utf-8"), f"{project}-rankings.csv"
                 ),
                 icon="download",
             ).classes("w-full sm:w-auto")
             ui.button(
                 "Export data",
                 on_click=lambda p=project: ui.download(
-                    json.dumps(export_project(p), indent=2) + "\n", f"{p}-export.json"
+                    (json.dumps(export_project(p), indent=2) + "\n").encode("utf-8"),
+                    f"{p}-export.json",
                 ),
                 icon="file_download",
             ).classes("w-full sm:w-auto")
