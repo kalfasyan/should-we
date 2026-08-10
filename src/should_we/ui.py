@@ -58,6 +58,23 @@ ui.add_head_html(
     shared=True,
 )
 
+app.colors(primary="#6366f1", secondary="#8b5cf6", accent="#22d3ee")
+ui.add_css(
+    """
+    .q-card { border-radius: 12px; border: 1px solid rgba(255,255,255,.06); }
+    .q-expansion-item .q-item { border-radius: 8px; }
+    .q-card, .q-btn { transition: all .15s ease; }
+    @media (max-width: 640px) {
+        .q-header { height: auto !important; min-height: 56px; }
+        .q-btn:not(.q-btn--dense):not(.q-btn--flat):not(.q-btn--round) {
+            min-height: 44px;
+        }
+        .q-field__control { min-height: 44px; }
+    }
+    """,
+    shared=True,
+)
+
 _project_key: str | None = None
 _config: ScoringConfig | None = None
 _dropdown: ui.select | None = None
@@ -174,7 +191,7 @@ def _option_delete_dialog(name: str, project: str) -> ui.dialog:
     with ui.dialog() as dialog, ui.card():
         ui.label(f"Delete option '{name}'?").classes("text-h6")
         ui.label("This cannot be undone.")
-        with ui.row().classes("justify-end gap-2 mt-4"):
+        with ui.row().classes("justify-end gap-2 mt-4 flex-wrap"):
             ui.button("Cancel", on_click=dialog.close)
             ui.button(
                 "Delete",
@@ -348,7 +365,7 @@ def _results_list(project: str, config: ScoringConfig, *, readonly: bool = False
                     score = opt.breakdown.get(ev.name)
                     chip = "✅" if opt.name in votes.get(ev.name, {}) else "⏳"
                     with ui.row().classes("w-full items-center gap-3"):
-                        ui.label(f"{chip} {ev.name}").classes("w-32 text-caption")
+                        ui.label(f"{chip} {ev.name}").classes("w-24 min-w-0 text-caption")
                         if score is None:
                             ui.label("not voted").classes("text-grey-6 text-caption")
                         else:
@@ -361,26 +378,26 @@ def _results_list(project: str, config: ScoringConfig, *, readonly: bool = False
                     ).classes("text-red").tooltip("Delete option")
 
     if not readonly:
-        with ui.row().classes("gap-2 items-center"):
+        with ui.row().classes("flex-col sm:flex-row gap-2 sm:items-center"):
             ui.button(
                 "Copy results link",
                 on_click=lambda: _copy_text(
                     _abs_url(f"results/{project}/{get_join_token(project)}"), "Results link copied"
                 ),
                 icon="link",
-            ).props("outline")
+            ).props("outline").classes("w-full sm:w-auto")
             ui.button(
                 "Reprocess",
                 on_click=lambda p=project: _reprocess(p),
                 icon="refresh",
-            )
+            ).classes("w-full sm:w-auto")
             ui.button(
                 "Export CSV",
                 on_click=lambda: ui.download(
                     _csv_content(config, sorted_opts), f"{project}-rankings.csv"
                 ),
                 icon="download",
-            )
+            ).classes("w-full sm:w-auto")
         # ponytail: poll only the tiny status line, never the list itself —
         # rebuilding expansions every few seconds makes them unclickable
         ui.timer(5.0, lambda: _vote_status.refresh())
@@ -392,11 +409,16 @@ def _charts_body(sorted_opts, config: ScoringConfig) -> None:
         ui.echart(
             {
                 "tooltip": {},
-                "grid": {"left": 40, "right": 16, "top": 30, "bottom": 60},
+                "grid": {"left": 36, "right": 12, "top": 30, "bottom": 70},
                 "xAxis": {
                     "type": "category",
                     "data": names,
-                    "axisLabel": {"rotate": 30, "fontSize": 10},
+                    "axisLabel": {
+                        "rotate": 30,
+                        "fontSize": 10,
+                        "interval": 0,
+                        "hideOverlap": True,
+                    },
                 },
                 "yAxis": {"type": "value", "min": 0, "max": 5},
                 "series": [
@@ -423,7 +445,7 @@ def _charts_body(sorted_opts, config: ScoringConfig) -> None:
         ui.echart(
             {
                 "tooltip": {},
-                "grid": {"left": 80, "right": 16, "top": 30, "bottom": 80},
+                "grid": {"left": 64, "right": 16, "top": 30, "bottom": 80},
                 "xAxis": {
                     "type": "category",
                     "data": names,
@@ -543,7 +565,7 @@ def setup_panel():
         ui.markdown("### 🎉 Project ready!").classes("mb-1")
         ui.label("Share the join link with your group:")
         join_url_inp = ui.input().classes("w-full").props("readonly")
-        with ui.row().classes("justify-end gap-2 mt-4"):
+        with ui.row().classes("justify-end gap-2 mt-4 flex-wrap"):
             ui.button(
                 "Copy",
                 on_click=lambda: _copy_text(join_url_inp.value, "Join link copied"),
@@ -570,7 +592,7 @@ def test_users_panel():
         ui.label("Share name + password once — it cannot be shown again.").classes(
             "text-caption text-warning"
         )
-        with ui.row().classes("justify-end gap-2 mt-4"):
+        with ui.row().classes("justify-end gap-2 mt-4 flex-wrap"):
             ui.button(
                 "Copy password",
                 on_click=lambda: _copy_text(cred_password.value, "Password copied"),
@@ -614,7 +636,7 @@ def test_users_panel():
             with ui.dialog() as del_dialog, ui.card():
                 ui.markdown(f"### Delete {name}?").classes("mb-1")
                 also_proj = ui.checkbox("Also delete their project")
-                with ui.row().classes("justify-end gap-2 mt-4"):
+                with ui.row().classes("justify-end gap-2 mt-4 flex-wrap"):
                     ui.button("Cancel", on_click=del_dialog.close)
                     ui.button(
                         "Delete",
@@ -655,13 +677,13 @@ def _user_home(name: str) -> None:
         return
     ui.dark_mode().enable()
     key = _label_to_key(name)
-    with ui.header(elevated=True).classes("items-center justify-between px-4"):
+    with ui.header(elevated=True).classes("items-center justify-between px-4 flex-wrap gap-2"):
         with ui.row().classes("items-center gap-3"):
             ui.image("/assets/logo.png").classes("w-9")
             ui.label("should-we").classes("text-h5")
         with ui.row().classes("items-center gap-2"):
             ui.badge("test user", color="secondary", outline=True).tooltip("Logged in as test user")
-            ui.label(name).classes("text-caption")
+            ui.label(name).classes("hidden sm:inline text-caption")
             ui.button("Logout", on_click=_logout, icon="logout", color="white").props(
                 "unelevated"
             ).classes("text-black")
@@ -680,19 +702,19 @@ def _user_home_body(name: str, key: str) -> None:
         return
     _invite_card(key, config)
     _results_list(key, config)
-    with ui.row().classes("gap-2 items-center"):
+    with ui.row().classes("flex-col sm:flex-row gap-2 sm:items-center"):
         ui.button(
             "Vote & add options",
             icon="how_to_vote",
             on_click=lambda: _vote_as_user(key, name),
-        ).props("unelevated")
+        ).props("unelevated").classes("w-full sm:w-auto")
         ui.button(
             "Copy results link",
             icon="link",
             on_click=lambda: _copy_text(
                 _abs_url(f"results/{key}/{get_join_token(key)}"), "Results link copied"
             ),
-        ).props("outline")
+        ).props("outline").classes("w-full sm:w-auto")
 
 
 def _user_create_form(name: str, key: str) -> None:
@@ -879,7 +901,7 @@ def _vote_body(project: str, config: ScoringConfig, evaluator: str) -> None:
                                 .classes("w-full sm:w-auto sm:flex-grow")
                             )
                             ev_inps[feat.key] = s
-                with ui.row().classes("w-full items-center gap-2 mt-2"):
+                with ui.row().classes("w-full items-center gap-2 mt-2 flex-wrap"):
                     note_inp = (
                         ui.input(value=opt.notes, placeholder="Link or note")
                         .props("dense")
@@ -896,13 +918,13 @@ def _vote_body(project: str, config: ScoringConfig, evaluator: str) -> None:
                         on_click=lambda n=opt.name, ev=ev_inps: _save_vote(
                             project, evaluator, n, {k: v.value for k, v in ev.items()}
                         ),
-                    ).props("unelevated")
+                    ).props("unelevated").classes("w-full sm:w-auto")
 
     with ui.card().classes("w-full mb-4"):
         ui.markdown("### ➕ Add an option").classes("mb-2")
         ui.label("Add one any time — everyone else can vote on it too.").classes("text-caption")
-        new_name = ui.input("Option name").classes("w-64")
-        new_notes = ui.input("Link or note (optional)").classes("w-64")
+        new_name = ui.input("Option name").classes("w-full sm:w-64")
+        new_notes = ui.input("Link or note (optional)").classes("w-full sm:w-64")
 
         def _add_option():
             name = new_name.value.strip()
@@ -943,7 +965,7 @@ def join_page(project: str, token: str):
         return
     if join_link_expired(config):
         ui.dark_mode().enable()
-        with ui.column().classes("items-center justify-center h-screen gap-2"):
+        with ui.column().classes("items-center justify-center min-h-screen gap-2"):
             ui.label("This join link has expired.").classes("text-h5")
             ui.label(
                 f"It stopped working on {config.join_expires_at}. "
@@ -955,12 +977,12 @@ def join_page(project: str, token: str):
         ui.label(f"Join {config.project_name}").classes("text-h6")
 
     with ui.column().classes(
-        "items-center justify-center h-screen gap-2 w-full max-w-2xl mx-auto px-4"
+        "items-center justify-center min-h-screen gap-2 w-full max-w-2xl mx-auto px-4"
     ):
         ui.markdown(
             "Pick a name — then you'll set your weights and can vote on every option."
         ).classes("text-center")
-        name_inp = ui.input("Your name (e.g. Alice)").classes("w-64")
+        name_inp = ui.input("Your name (e.g. Alice)").classes("w-full sm:w-64")
 
         def _join():
             name = name_inp.value.strip()
@@ -972,7 +994,7 @@ def join_page(project: str, token: str):
             app.storage.user["welcome"] = True
             ui.navigate.to(f"/vote/{project}/{token2}")
 
-        ui.button("Join and vote", on_click=_join, icon="login")
+        ui.button("Join and vote", on_click=_join, icon="login").classes("w-full sm:w-auto")
 
 
 def _save_vote(project: str, evaluator: str, option_name: str, scores: dict[str, float]) -> None:
@@ -988,7 +1010,7 @@ def _save_note(project: str, option_name: str, notes: str) -> None:
 
 def _bad_link() -> None:
     ui.dark_mode().enable()
-    with ui.column().classes("items-center justify-center h-screen gap-2"):
+    with ui.column().classes("items-center justify-center min-h-screen gap-2"):
         ui.label("Invalid or expired link.").classes("text-h5")
         ui.label("Ask the project owner for a fresh voting link.").classes("text-caption")
 
@@ -996,7 +1018,7 @@ def _bad_link() -> None:
 def _login_page() -> None:
     ui.dark_mode().enable()
     with ui.column().classes(
-        "items-center justify-center h-screen gap-2 w-full max-w-sm mx-auto px-4"
+        "items-center justify-center min-h-screen gap-2 w-full max-w-sm mx-auto px-4"
     ):
         ui.image("/pwa/icon-192.png").classes("w-24")
         ui.markdown("### should-we").classes("mb-2")
@@ -1039,12 +1061,12 @@ def _results_body(project: str, config: ScoringConfig) -> None:
                     "My project",
                     icon="home",
                     on_click=lambda: ui.navigate.to("/"),
-                ).props("outline")
+                ).props("outline").classes("min-h-10")
             ui.button(
                 "See rankings",
                 icon="leaderboard",
                 on_click=lambda: ui.navigate.to(f"/?project={project}&tab=rankings"),
-            ).props("outline")
+            ).props("outline").classes("min-h-10")
     with ui.column().classes("w-full max-w-4xl mx-auto px-4 py-4"):
         _results_list(project, config, readonly=True)
 
@@ -1103,11 +1125,11 @@ def index():
         _project_key = q["project"]
         _config = load_config(_project_key)
 
-    with ui.header(elevated=True).classes("items-center justify-between px-4"):
-        with ui.row().classes("items-center gap-3"):
+    with ui.header(elevated=True).classes("items-center justify-between px-4 flex-wrap gap-2"):
+        with ui.row().classes("items-center gap-3 flex-wrap"):
             ui.image("/assets/logo.png").classes("w-9")
             ui.label("should-we").classes("text-h5")
-        with ui.row().classes("items-center gap-2"):
+        with ui.row().classes("items-center gap-2 flex-wrap"):
             admin_name = app.storage.user.get("name")
             if admin_name:
                 ui.badge("admin", color="positive", outline=True).tooltip(
@@ -1125,11 +1147,11 @@ def index():
                     options=projects,
                     value=_project_key,
                     on_change=_on_project_change,
-                ).classes("w-48")
+                ).classes("w-full sm:w-48")
                 with ui.dialog() as delete_dialog, ui.card():
                     delete_label = ui.label().classes("text-h6")
                     ui.label("This cannot be undone.")
-                    with ui.row().classes("justify-end gap-2 mt-4"):
+                    with ui.row().classes("justify-end gap-2 mt-4 flex-wrap"):
                         ui.button("Cancel", on_click=delete_dialog.close)
                         ui.button(
                             "Delete",
