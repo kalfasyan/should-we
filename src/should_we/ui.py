@@ -600,7 +600,7 @@ def setup_panel():
         ui.notify(f"Template '{path.stem}' loaded — adjust and save.", type="positive")
 
     if templates:
-        with ui.row().classes("items-center gap-2 mb-2"):
+        with ui.row().classes("items-center gap-2 mb-2 w-full"):
             ui.select(
                 label="Start from template",
                 options={p.stem: p.stem for p in templates},
@@ -809,7 +809,7 @@ def _user_create_form(name: str, key: str) -> None:
         ui.notify(f"Template '{path.stem}' loaded — adjust and save.", type="positive")
 
     if templates:
-        with ui.row().classes("items-center gap-2 mb-2"):
+        with ui.row().classes("items-center gap-2 mb-2 w-full"):
             ui.select(
                 label="Start from template",
                 options={p.stem: p.stem for p in templates},
@@ -1233,7 +1233,7 @@ def index():
             ).classes("text-black")
         projects = list_projects()
         if projects:
-            with ui.row().classes("items-center gap-2"):
+            with ui.row().classes("items-center gap-2 w-full sm:w-auto"):
                 _dropdown = ui.select(
                     label="Project",
                     options=projects,

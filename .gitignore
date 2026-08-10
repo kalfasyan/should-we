@@ -225,3 +225,4 @@ data/*
 
 # Personal cheat sheet — not for version control
 /tmp/
+.nicegui/
