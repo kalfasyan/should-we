@@ -84,7 +84,7 @@ disk.
 ## Deploy and use
 
 1. Open `https://should-we.xyz` — log in as an admin.
-2. Setup tab → create a project (its join link is valid 30 days).
+2. New project tab → create a project (its join link is valid 30 days).
 3. Rankings tab → copy the join link to your group. The expiry line and
    "Extend 30 days" button live right under it.
 4. "Copy results link" hands out the secret results link to the group.

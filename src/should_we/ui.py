@@ -343,8 +343,8 @@ def _results_list(project: str, config: ScoringConfig, *, readonly: bool = False
             with ui.column().classes("gap-1"):
                 ui.markdown("### 📭 No options yet").classes("mb-1")
                 ui.label(
-                    "Anyone can add the first one — open your voting link (join link above) "
-                    "and use the 'Add an option' box."
+                    "The people voting add the options. To add the first ones yourself, "
+                    "open the join link above and join under your own name."
                 )
         return
 
@@ -352,8 +352,8 @@ def _results_list(project: str, config: ScoringConfig, *, readonly: bool = False
     _charts_body(sorted_opts, config)
 
     ui.markdown(
-        "Options ranked by combined score (average of all evaluators). "
-        "Click any option to see each person's individual score."
+        "Best match first, scored out of 5 using everyone's ratings and priorities. "
+        "Tap an option to see each person's score."
     ).classes("mb-4")
 
     with ui.column().classes("w-full gap-2"):
@@ -361,10 +361,10 @@ def _results_list(project: str, config: ScoringConfig, *, readonly: bool = False
             combined = compute_combined(opt.breakdown)
             icon = ["military_tech", "workspace_premium", "star"][i] if i < 3 else None
             d = disagreement(opt.breakdown)
-            tag = "  🤔" if d is not None and d >= 1.5 else ""
-            with ui.expansion(f"#{i + 1}  {opt.name}  —  {combined:.3f}{tag}", icon=icon).classes(
-                "w-full"
-            ):
+            tag = "  ·  🤔 opinions split" if d is not None and d >= 1.5 else ""
+            with ui.expansion(
+                f"#{i + 1}  {opt.name}  —  {combined:.1f} / 5{tag}", icon=icon
+            ).classes("w-full"):
                 for ev in config.evaluators:
                     score = opt.breakdown.get(ev.name)
                     chip = "✅" if opt.name in votes.get(ev.name, {}) else "⏳"
@@ -374,7 +374,7 @@ def _results_list(project: str, config: ScoringConfig, *, readonly: bool = False
                             ui.label("not voted").classes("text-grey-6 text-caption")
                         else:
                             _score_bar(score)
-                            ui.label(f"{score:.3f}").classes("w-14 text-right")
+                            ui.label(f"{score:.1f}").classes("w-14 text-right")
                 if not readonly:
                     del_dialog = _option_delete_dialog(opt.name, project)
                     ui.button(icon="delete", on_click=del_dialog.open).props(
@@ -447,11 +447,6 @@ def _results_list(project: str, config: ScoringConfig, *, readonly: bool = False
                 icon="link",
             ).props("outline").classes("w-full sm:w-auto")
             ui.button(
-                "Reprocess",
-                on_click=lambda p=project: _reprocess(p),
-                icon="refresh",
-            ).classes("w-full sm:w-auto")
-            ui.button(
                 "Export CSV",
                 on_click=lambda: ui.download(
                     _csv_content(config, sorted_opts).encode("utf-8"), f"{project}-rankings.csv"
@@ -497,7 +492,7 @@ def _charts_body(sorted_opts, config: ScoringConfig) -> None:
                 "series": [
                     {
                         "type": "bar",
-                        "data": [round(compute_combined(o.breakdown), 3) for o in sorted_opts],
+                        "data": [round(compute_combined(o.breakdown), 1) for o in sorted_opts],
                     }
                 ],
             }
@@ -514,7 +509,7 @@ def _charts_body(sorted_opts, config: ScoringConfig) -> None:
                     cell = f"{opt.name} · {ev.name}"
                     if opt.notes:
                         cell += f" — {opt.notes}"
-                    heat.append({"value": [oi, ei, round(v, 3)], "name": cell})
+                    heat.append({"value": [oi, ei, round(v, 1)], "name": cell})
         ui.echart(
             {
                 "tooltip": {},
@@ -536,12 +531,6 @@ def _charts_body(sorted_opts, config: ScoringConfig) -> None:
                 "series": [{"type": "heatmap", "data": heat, "label": {"show": True}}],
             }
         ).classes("w-full h-72")
-
-
-def _reprocess(project: str | None = None) -> None:
-    reprocess_all(project or _project_key)
-    rankings_panel.refresh()
-    _user_home_body.refresh()
 
 
 def _regenerate(evaluator: str, project: str) -> None:
@@ -568,7 +557,9 @@ def _csv_content(config: ScoringConfig, options) -> str:
 @ui.refreshable
 def rankings_panel():
     if not _config or not _project_key:
-        ui.label("No project selected. Use the dropdown in the top bar.")
+        with ui.card().classes("w-full"):
+            ui.markdown("### 👋 Nothing here yet").classes("mb-1")
+            ui.label("Start your first decision under 'New project'.")
         return
     _invite_card(_project_key, _config)
     _results_list(_project_key, _config)
@@ -578,47 +569,56 @@ def rankings_panel():
 def setup_panel():
     with ui.card().classes("w-full mb-4"):
         with ui.column().classes("gap-1"):
-            ui.markdown("### 🛠️ How to set up a project").classes("mb-2")
-            ui.label("1. Enter a project name and the features you care about.")
-            ui.label("2. Click Save Config — the new project auto-selects in the top bar.")
-            ui.label("3. Share the join link from the Rankings tab.")
+            ui.markdown("### 🛠️ Start a new decision").classes("mb-2")
+            ui.label("1. Name it, and list what matters when choosing (or start from an example).")
+            ui.label("2. Create it, then send the join link to everyone deciding with you.")
             ui.label(
-                "4. Everyone opens it, picks a name, sets their own weights — "
-                "then adds options and votes."
+                "3. They each say how much every point matters to them, "
+                "add the options and rate them."
             )
-
-    project_name = ui.input("Project name").classes("w-full sm:w-64")
-    feature_labels = ui.textarea("Feature labels (one per line)").classes("w-full sm:w-64")
 
     template_dir = Path(__file__).resolve().parent / "templates"
     templates = sorted(template_dir.glob("*.json")) if template_dir.is_dir() else []
+    template_select = ui.select(
+        label="Start from an example (optional)",
+        options={p.stem: p.stem for p in templates},
+    ).classes("w-full sm:w-64")
+    template_select.set_visibility(bool(templates))
+
+    project_name = ui.input("Name", placeholder="e.g. Our new apartment").classes("w-full sm:w-64")
+    feature_labels = ui.textarea(
+        "What matters when choosing? One per line",
+        placeholder="Price\nLocation\nSize",
+    ).classes("w-full sm:w-64")
 
     def _apply_template(path: Path) -> None:
         raw = json.loads(path.read_text(encoding="utf-8"))
         project_name.value = raw["project_name"]
         feature_labels.value = "\n".join(f["label"] for f in raw["features"])
-        ui.notify(f"Template '{path.stem}' loaded — adjust and save.", type="positive")
+        ui.notify(f"Example '{path.stem}' loaded. Adjust it, then create.", type="positive")
 
-    if templates:
-        with ui.row().classes("items-center gap-2 mb-2 w-full"):
-            ui.select(
-                label="Start from template",
-                options={p.stem: p.stem for p in templates},
-                on_change=lambda e: _apply_template(template_dir / f"{e.value}.json"),
-            ).classes("w-full sm:w-56")
+    template_select.on_value_change(
+        lambda e: e.value and _apply_template(template_dir / f"{e.value}.json")
+    )
 
     def _save_config():
         pname = project_name.value.strip()
         if not pname:
-            ui.notify("Project name required.", type="negative")
+            ui.notify("Give it a name first.", type="negative")
             return
         feat_labels = [
             label.strip() for label in feature_labels.value.strip().split("\n") if label.strip()
         ]
         if not feat_labels:
-            ui.notify("Enter at least one feature.", type="negative")
+            ui.notify("List at least one thing that matters.", type="negative")
             return
         pkey = _label_to_key(pname)
+        if pkey in list_projects():
+            ui.notify(
+                f"'{pname}' already exists. Pick another name, or delete the old one first.",
+                type="negative",
+            )
+            return
         features = [Feature(key=_label_to_key(label), label=label) for label in feat_labels]
         save_config(
             ScoringConfig(
@@ -629,24 +629,11 @@ def setup_panel():
             ),
             project=pkey,
         )
-        ui.notify(f"Project '{pname}' saved!", type="positive")
+        ui.notify(f"'{pname}' created. Now share the join link.", type="positive")
         _set_project(pkey)
-        join_url_inp.value = _abs_url(f"join/{pkey}/{get_join_token(pkey)}")
-        ready_dialog.open()
+        _go_rankings()
 
-    with ui.dialog() as ready_dialog, ui.card():
-        ui.markdown("### 🎉 Project ready!").classes("mb-1")
-        ui.label("Share the join link with your group:")
-        join_url_inp = ui.input().classes("w-full").props("readonly")
-        with ui.row().classes("justify-end gap-2 mt-4 flex-wrap"):
-            ui.button(
-                "Copy",
-                on_click=lambda: _copy_text(join_url_inp.value, "Join link copied"),
-                icon="copy",
-            ).props("outline")
-            ui.button("Go to Rankings", on_click=lambda: _go_rankings(ready_dialog), icon="launch")
-
-    ui.button("Save Config", on_click=_save_config, icon="save")
+    ui.button("Create", on_click=_save_config, icon="add")
 
 
 @ui.refreshable
@@ -732,8 +719,7 @@ def _do_delete_user(dialog, name: str, also_project: bool) -> None:
     test_users_panel.refresh()
 
 
-def _go_rankings(dialog) -> None:
-    dialog.close()
+def _go_rankings() -> None:
     if _panels is not None and _tab_rankings is not None:
         _panels.value = _tab_rankings
 
@@ -860,6 +846,8 @@ def vote_page(project: str, token: str):
         _bad_link()
         return
 
+    _remember_voter(project, token)
+
     with ui.header(elevated=True).classes("items-center justify-between px-4 flex-wrap gap-2"):
         with ui.column().classes("gap-0"):
             ui.label(f"{config.project_name} — vote").classes("text-h6")
@@ -895,107 +883,147 @@ def vote_page(project: str, token: str):
         _vote_body(project, config, evaluator)
 
 
+# How much a feature matters, in words; the numbers are the stored weights.
+WEIGHT_LEVELS = {0: "Don't care", 1: "A little", 3: "Important", 5: "Must-have"}
+DEFAULT_WEIGHT = 3
+UNRATED_SCORE = 2.5
+
+
+def _weight_level(weight: int) -> int:
+    """Nearest level to a stored weight (older projects could store 2 or 4)."""
+    return min(WEIGHT_LEVELS, key=lambda lvl: (abs(lvl - weight), -lvl))
+
+
+def _remember_voter(project: str, token: str) -> None:
+    """Remember this browser's voting link, so reopening the join link continues."""
+    try:
+        voters = dict(app.storage.user.get("voters", {}))
+        voters[project] = token
+        app.storage.user["voters"] = voters
+    except RuntimeError:  # storage_secret missing
+        pass
+
+
+def _remembered_voter(project: str, config: ScoringConfig) -> tuple[str, str] | None:
+    try:
+        token = app.storage.user.get("voters", {}).get(project)
+    except RuntimeError:
+        return None
+    name = next((ev for ev, tok in config.voting_tokens.items() if token and tok == token), None)
+    return (name, token) if name else None
+
+
+@ui.refreshable
+def _rating_progress(project: str, evaluator: str, total: int) -> None:
+    rated = sum(1 for name in load_votes(project).get(evaluator, {}) if find_option(name, project))
+    done = rated >= total
+    ui.label(
+        f"{'✅' if done else '⏳'} You've rated {min(rated, total)} of {total} option"
+        f"{'s' if total != 1 else ''}."
+        + (" All done! Tap See current results below." if done else "")
+    ).classes("text-caption " + ("text-positive" if done else "text-primary"))
+
+
 @ui.refreshable
 def _vote_body(project: str, config: ScoringConfig, evaluator: str) -> None:
     # ponytail: reload every render — the page-level config goes stale after
     # weights are saved, and refresh() re-runs with the old arguments
     config = load_config(project)
     ev_config = next(e for e in config.evaluators if e.name == evaluator)
+    if not ev_config.weights:
+        # Start everyone at "Important" so their ratings count straight away.
+        set_weights(project, evaluator, {f.key: DEFAULT_WEIGHT for f in config.features})
+        reprocess_all(project)
+        config = load_config(project)
+        ev_config = next(e for e in config.evaluators if e.name == evaluator)
     options = load_options(project)
     votes = load_votes(project)
 
     with ui.card().classes("w-full mb-4"):
-        with ui.row().classes("items-center gap-2"):
-            ui.icon("tune").classes("text-primary")
-            ui.markdown(f"### ⚖️ What matters to you in general, {evaluator}?").classes("mb-0")
+        ui.markdown("### Step 1 · What matters to you?").classes("mb-0")
         ui.label(
-            "These are your general priorities — they apply to every option, "
-            "not to any specific one. 0 = don't care  |  3 = important  |  5 = dealbreaker"
+            "Your general priorities, used for every option. Changes save automatically."
         ).classes("text-caption")
-        sliders: dict[str, ui.slider] = {}
+        toggles: dict[str, ui.toggle] = {}
+
+        def _save_weights() -> None:
+            set_weights(project, evaluator, {k: int(t.value) for k, t in toggles.items()})
+            reprocess_all(project)
+            ui.notify("Priorities saved.", type="positive", timeout=1000)
+
         for feat in config.features:
-            with ui.row().classes(
-                "w-full items-start gap-1 flex-col sm:items-center sm:gap-0 sm:flex-row"
-            ):
-                ui.label(feat.label).classes("w-full sm:w-32")
-                s = (
-                    ui.slider(min=0, max=5, step=1, value=ev_config.weights.get(feat.key, 3))
-                    .props("label-always")
-                    .classes("w-full sm:w-auto sm:flex-grow")
-                )
-                sliders[feat.key] = s
-
-        def _save_weights():
-            set_weights(project, evaluator, {k: int(v.value) for k, v in sliders.items()})
-            ui.notify("Weights saved.", type="positive")
-            _vote_body.refresh()
-
-        ui.label("Then press 'Save my weights' — nothing counts until you do.").classes(
-            "text-caption text-warning"
-        )
-        ui.button("Save my weights", on_click=_save_weights, icon="save").props("unelevated")
-
-    if not ev_config.weights:
-        ui.label("Save your weights above first — without them your votes don't count.").classes(
-            "text-warning mb-2"
-        )
-
-    if not options:
-        with ui.card().classes("w-full mb-4"):
-            ui.label("No options yet — add the first one below 👇").classes("text-grey-6")
-    else:
-        ui.markdown(
-            "For each option, rate how well it does on each feature — "
-            "then press **Save vote** (nothing counts until you save)."
-        ).classes("mb-2")
-        for opt in options:
-            with ui.card().classes("w-full mb-4"):
-                ui.label(opt.name).classes("text-h6")
-                ui.label(
-                    "How well does this option do on each feature? (0 = poor  |  5 = excellent)"
-                ).classes("text-caption")
-                if opt.name in votes.get(evaluator, {}):
-                    ui.label("✓ voted").classes("text-positive text-caption")
-                ev_inps: dict[str, ui.slider] = {}
-                with ui.column().classes("w-full gap-2"):
-                    for feat in config.features:
-                        with ui.row().classes(
-                            "w-full items-start gap-1 flex-col sm:items-center sm:gap-0 sm:flex-row"
-                        ):
-                            ui.label(feat.label).classes("w-full sm:w-32")
-                            s = (
-                                ui.slider(
-                                    min=0,
-                                    max=5,
-                                    step=0.5,
-                                    value=float(opt.scores.get(evaluator, {}).get(feat.key, 0.0)),
-                                )
-                                .props("label-always")
-                                .classes("w-full sm:w-auto sm:flex-grow")
-                            )
-                            ev_inps[feat.key] = s
-                with ui.row().classes("w-full items-center gap-2 mt-2 flex-wrap"):
-                    note_inp = (
-                        ui.input(value=opt.notes, placeholder="Link or note")
-                        .props("dense")
-                        .classes("flex-grow")
+            with ui.column().classes("w-full gap-0 mt-2"):
+                ui.label(feat.label).classes("text-weight-medium")
+                toggles[feat.key] = (
+                    ui.toggle(
+                        WEIGHT_LEVELS,
+                        value=_weight_level(ev_config.weights.get(feat.key, DEFAULT_WEIGHT)),
+                        on_change=_save_weights,
                     )
-                    ui.button(
-                        "Save note",
-                        icon="link",
-                        on_click=lambda n=opt.name, inp=note_inp: _save_note(project, n, inp.value),
-                    ).props("flat dense")
-                    ui.button(
-                        "Save my vote",
-                        icon="save",
-                        on_click=lambda n=opt.name, ev=ev_inps: _save_vote(
-                            project, evaluator, n, {k: v.value for k, v in ev.items()}
-                        ),
-                    ).props("unelevated").classes("w-full sm:w-auto")
+                    .props("no-caps spread dense")
+                    .classes("w-full")
+                )
+
+    with ui.card().classes("w-full mb-4"):
+        ui.markdown("### Step 2 · Rate each option").classes("mb-0")
+        if not options:
+            ui.label("No options yet. Add the first one below 👇").classes("text-grey-6")
+        else:
+            ui.label(
+                "How good is each option on each point? 0 = bad, 5 = great. "
+                "Changes save automatically."
+            ).classes("text-caption")
+            _rating_progress(project, evaluator, len(options))
+
+    for opt in options:
+        rated = opt.name in votes.get(evaluator, {})
+        with ui.card().classes("w-full mb-4"):
+            with ui.row().classes("w-full items-center justify-between gap-2"):
+                ui.label(opt.name).classes("text-h6")
+                status = ui.label().classes("text-caption")
+            sliders: dict[str, ui.slider] = {}
+            unrated_row = ui.row().classes("w-full items-center gap-2")
+
+            def _set_status(done: bool, status=status, unrated_row=unrated_row) -> None:
+                status.text = "✓ Rated" if done else "Not rated yet"
+                status.classes(
+                    replace="text-caption " + ("text-positive" if done else "text-warning")
+                )
+                unrated_row.set_visibility(not done)
+
+            def _rate(name=opt.name, sliders=sliders, set_status=_set_status) -> None:
+                save_vote(project, evaluator, name, {k: s.value for k, s in sliders.items()})
+                set_status(True)
+                _rating_progress.refresh()
+
+            mine = opt.scores.get(evaluator, {})
+            with ui.column().classes("w-full gap-2"):
+                for feat in config.features:
+                    with ui.row().classes(
+                        "w-full items-start gap-1 flex-col sm:items-center sm:gap-0 sm:flex-row"
+                    ):
+                        ui.label(feat.label).classes("w-full sm:w-32")
+                        start = mine.get(feat.key, 0.0) if rated else UNRATED_SCORE
+                        sliders[feat.key] = (
+                            ui.slider(min=0, max=5, step=0.5, value=float(start))
+                            .props("label-always")
+                            .classes("w-full sm:w-auto sm:flex-grow")
+                            .on("change", lambda _, rate=_rate: rate())
+                        )
+            with unrated_row:
+                ui.label("Move a slider to rate it, or").classes("text-caption text-grey-6")
+                ui.button("Keep these ratings", on_click=_rate).props("flat dense no-caps")
+            _set_status(rated)
+            ui.input(value=opt.notes, placeholder="Link or note (shared with everyone)").props(
+                "dense"
+            ).classes("w-full mt-2").on(
+                "blur",
+                lambda e, n=opt.name: _save_note(project, n, e.sender.value),
+            )
 
     with ui.card().classes("w-full mb-4"):
         ui.markdown("### ➕ Add an option").classes("mb-2")
-        ui.label("Add one any time — everyone else can vote on it too.").classes("text-caption")
+        ui.label("Add one any time. Everyone else can rate it too.").classes("text-caption")
         new_name = ui.input("Option name").classes("w-full sm:w-64")
         new_notes = ui.input("Link or note (optional)").classes("w-full sm:w-64")
 
@@ -1006,12 +1034,12 @@ def _vote_body(project: str, config: ScoringConfig, evaluator: str) -> None:
                 return
             if find_option(name, project=project):
                 ui.notify(
-                    "Already exists — pick another name, or update its link/note below.",
+                    "Already exists. Pick another name, or edit its note above.",
                     type="warning",
                 )
                 return
             save_option(name, {evaluator: {}}, project=project, notes=new_notes.value.strip())
-            ui.notify(f"'{name}' added — now rate it above.", type="positive")
+            ui.notify(f"'{name}' added. Now rate it above.", type="positive")
             new_name.value = ""
             new_notes.value = ""
             _vote_body.refresh()
@@ -1055,18 +1083,30 @@ def join_page(project: str, token: str):
         with ui.card().classes("w-full text-center"):
             ui.markdown(f"### 👋 You've been invited to **{config.project_name}**").classes("mb-1")
             ui.label(
-                "Say what's important to you, then let's get voting — "
-                "everyone's priorities combine into one clear ranking."
+                "You're helping a group choose one option together. Say what matters to "
+                "you, rate the options, and everyone's answers combine into one ranking."
             ).classes("text-caption")
             with ui.row().classes("justify-center gap-2 flex-wrap"):
                 for step in (
                     "1️⃣ Pick a name",
-                    "2️⃣ Set your priorities",
-                    "3️⃣ Add & rate options",
+                    "2️⃣ Say what matters",
+                    "3️⃣ Rate the options",
                     "4️⃣ See the ranking 🎉",
                 ):
                     ui.label(step).classes("text-caption")
-        ui.markdown("Pick a name below to get started.").classes("text-center text-caption")
+        known = _remembered_voter(project, config)
+        if known:
+            name, voter_token = known
+            ui.button(
+                f"Continue as {name}",
+                on_click=lambda: ui.navigate.to(f"/vote/{project}/{voter_token}"),
+                icon="arrow_forward",
+            ).props("unelevated").classes("w-full sm:w-auto")
+            ui.label("Not you? Join with a different name below.").classes(
+                "text-caption text-grey-6"
+            )
+        else:
+            ui.markdown("Pick a name below to get started.").classes("text-center text-caption")
         name_inp = ui.input("Your name (e.g. Alice)").classes("w-full sm:w-64")
 
         def _join():
@@ -1074,23 +1114,30 @@ def join_page(project: str, token: str):
             if not name:
                 ui.notify("Enter a name.", type="negative")
                 return
+            if any(e.name.casefold() == name.casefold() for e in load_config(project).evaluators):
+                ui.notify(
+                    f"'{name}' has already joined. If that's you, open your personal link "
+                    "(the project owner can copy it for you), or pick another name.",
+                    type="warning",
+                    multi_line=True,
+                )
+                return
             add_evaluator(project, name)
             token2 = get_or_create_token(project, name)
+            _remember_voter(project, token2)
             app.storage.user["welcome"] = True
             ui.navigate.to(f"/vote/{project}/{token2}")
 
         ui.button("Join and vote", on_click=_join, icon="login").classes("w-full sm:w-auto")
 
 
-def _save_vote(project: str, evaluator: str, option_name: str, scores: dict[str, float]) -> None:
-    save_vote(project, evaluator, option_name, scores)
-    ui.notify(f"Vote saved for '{option_name}'.", type="positive")
-
-
 def _save_note(project: str, option_name: str, notes: str) -> None:
-    update_notes(option_name, notes.strip(), project=project)
-    ui.notify(f"Note saved for '{option_name}'.", type="positive")
-    _vote_body.refresh()
+    notes = (notes or "").strip()
+    current = find_option(option_name, project=project)
+    if current is None or current.notes == notes:
+        return
+    update_notes(option_name, notes, project=project)
+    ui.notify(f"Note saved for '{option_name}'.", type="positive", timeout=1000)
 
 
 def _bad_link() -> None:
@@ -1106,14 +1153,29 @@ def _login_page() -> None:
         "items-center justify-center min-h-screen gap-2 w-full max-w-md mx-auto px-4"
     ):
         ui.image("/pwa/icon-192.png").classes("w-24")
-        ui.markdown("### should-we").classes("mb-2")
-        ui.label("Decide together, without the debate.").classes("text-caption text-grey-6")
-        with ui.card().classes("w-full text-center"):
+        ui.markdown("### should-we").classes("mb-0")
+        ui.label(
+            "Pick one option together: an apartment, a car, a holiday spot. "
+            "Everyone has a say, and nobody has to win the argument."
+        ).classes("text-center")
+        with ui.card().classes("w-full"):
             ui.markdown("#### 🧭 How it works").classes("mb-1")
-            ui.label("Step 1: Say what's important to you ⚖️").classes("text-caption")
-            ui.label("Step 2: Add the options you're weighing 🤔").classes("text-caption")
-            ui.label("Step 3: Vote together 🗳️").classes("text-caption")
-            ui.label("Step 4: Profit — know what you should do 🎉").classes("text-caption")
+            for step in (
+                "1. You list what matters when choosing, like price or location.",
+                "2. You send one link to the people deciding with you.",
+                "3. Each of them says how much each thing matters to them, "
+                "then rates every option.",
+                "4. should-we combines everyone's answers into one ranking.",
+            ):
+                ui.label(step).classes("text-caption")
+        with ui.card().classes("w-full"):
+            ui.label("Got a link from someone? Just open that link instead.").classes(
+                "text-caption text-weight-medium"
+            )
+            ui.label(
+                "Voters don't need an account. This login is for the person who sets up "
+                "the decision."
+            ).classes("text-caption text-grey-6")
         ui.label("Log in as a project owner or test user.").classes("text-caption text-grey-6")
         name_inp = ui.input("Name").classes("w-full")
         pw_inp = ui.input("Password", password=True, password_toggle_button=True).classes("w-full")
@@ -1257,13 +1319,11 @@ def index():
 
     with ui.column().classes("w-full max-w-4xl mx-auto px-4"):
         with ui.tabs() as tabs:
-            tab_setup = ui.tab("Setup")
+            tab_setup = ui.tab("New project")
             tab_rankings = ui.tab("Rankings")
             tab_users = ui.tab("Test users")
 
-        with ui.tab_panels(
-            tabs, value=tab_rankings if q.get("tab") == "rankings" else tab_setup
-        ) as panels:
+        with ui.tab_panels(tabs, value=tab_rankings if projects else tab_setup) as panels:
             _panels = panels
             _tab_rankings = tab_rankings
             with ui.tab_panel(tab_setup):

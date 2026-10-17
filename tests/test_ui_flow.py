@@ -60,8 +60,11 @@ async def test_test_user_full_flow(user):
     user.find("Add option").click()
     await asyncio.sleep(0.4)
     await user.should_see("Cafe A")
-    user.find("Save my vote").click()
+    await user.should_see("Not rated yet")
+    user.find("Keep these ratings").click()
     await asyncio.sleep(0.4)
+    await user.should_see("✓ Rated")
+    await user.should_see("You've rated 1 of 1 option.")
 
     # a test user sees an obvious way back to their project
     await user.should_see("My project")
@@ -80,3 +83,36 @@ async def test_test_user_full_flow(user):
     user.find("Add option").click()
     await asyncio.sleep(0.4)
     await user.should_see("Cafe B")
+
+
+@pytest.mark.anyio
+async def test_join_rejects_taken_name_and_remembers_voter(user):
+    from should_we.config import (
+        Feature,
+        ScoringConfig,
+        add_evaluator,
+        get_join_token,
+        save_config,
+    )
+
+    save_config(
+        ScoringConfig(project_name="Trip", features=[Feature("cost", "Cost")], evaluators=[]),
+        project="trip",
+    )
+    add_evaluator("trip", "Alice")
+    join = f"/join/trip/{get_join_token('trip')}"
+
+    await user.open(join)
+    await user.should_see("Pick a name below to get started.")
+    user.find(ui.input).type("alice")
+    user.find("Join and vote").click()
+    await user.should_see("'alice' has already joined.", retries=10)
+
+    user.find(ui.input).clear().type("Bob")
+    user.find("Join and vote").click()
+    await asyncio.sleep(0.4)
+    await user.should_see("Step 1 · What matters to you?")
+
+    # reopening the join link in the same browser offers to continue as Bob
+    await user.open(join)
+    await user.should_see("Continue as Bob")
