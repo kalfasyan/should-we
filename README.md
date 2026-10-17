@@ -50,8 +50,8 @@ PWA (Android: "Install app"; iOS: "Add to Home Screen").
 1. Open https://should-we.xyz and log in with your admin name and
    password (the ones set via `SHOULD_WE_ADMINS` — see
    [docs/deploy.md](docs/deploy.md)).
-2. **Setup tab** → project name + feature labels (or pick a template) →
-   Save Config.
+2. **New project tab** → a name + what matters when choosing (or start
+   from an example) → Create. You land on the Rankings tab.
 3. **Rankings tab** → copy the **join link** and send it to your group. It
    expires 30 days after the project is created — the date is shown with an
    "Extend 30 days" button next to it.
@@ -61,8 +61,10 @@ PWA (Android: "Install app"; iOS: "Add to Home Screen").
 **As a group member:**
 
 1. Open the join link on your phone.
-2. Pick a name → set how much each feature matters to you → add options →
-   rate them (0–5 sliders).
+2. Pick a name → say how much each point matters to you (Don't care /
+   A little / Important / Must-have) → add options → rate them (0–5
+   sliders). Everything saves as you go, and reopening the join link on
+   the same phone offers "Continue as <name>".
 3. That's it — no account, no install. The welcome card explains how long
    the join link stays valid.
 
@@ -166,7 +168,7 @@ Full walkthrough: [docs/tutorial.md](docs/tutorial.md).
 
 Your whole group can vote from their own phones, no installs, no accounts:
 the owner sets up the project and shares the join link. Everyone picks a
-name, sets how much each feature matters to them (sliders), then adds
+name, says how much each feature matters to them, then adds
 options and rates them with sliders — the vote-status line in Rankings
 updates live, and charts refresh on any reload.
 

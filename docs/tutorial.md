@@ -219,20 +219,23 @@ Combined: 4.092
 The web app (`pixi run ui`) replaces the terminal flow with a few clicks and
 adds charts:
 
-1. **Setup tab** — type a project name and feature labels, or pick a
-   template (apartment, car, laptop, vacation). Save Config.
+1. **New project tab** — type a name and what matters when choosing, or
+   start from an example (apartment, car, laptop, vacation). Create.
 2. **Log in first** — the front page is a login screen for project owners
    (`SHOULD_WE_ADMINS` in the environment; dev defaults ship with
    `pixi run ui`). Everyone else only ever sees join/vote links.
-3. **Share the link** — a "Project ready!" dialog appears with the join
-   link. Copy it and send it to the group. New join links are valid
+3. **Share the link** — after Create you land on the Rankings tab with
+   the join link at the top. Copy it and send it to the group. New join links are valid
    **30 days** — the Rankings tab shows the expiry date with an
    "Extend 30 days" button.
 4. **Everyone joins** — the join link asks for a name, then drops them on
-   their voting page: sliders for how much each feature matters to them,
-   then an "Add an option" box with an optional link/note, and rating
-   sliders (0–5, step 0.5) per option. Duplicate option names are blocked;
-   links/notes can be edited per option via "Save note". First-time joiners
+   their voting page. Step 1: how much each feature matters to them
+   (Don't care / A little / Important / Must-have, starting at Important).
+   Step 2: rating sliders (0–5, step 0.5) per option, with a "Not rated
+   yet" / "✓ Rated" marker and an "x of y rated" line. Everything saves
+   automatically, notes included. Names already taken and duplicate option
+   names are blocked, and reopening the join link offers "Continue as
+   <name>". First-time joiners
    see a welcome card explaining the join link's validity window.
 5. **Rankings tab** — bar chart of combined scores and an
    options×people heatmap at the top (hover a cell for the score and note;

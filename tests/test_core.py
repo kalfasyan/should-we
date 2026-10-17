@@ -298,3 +298,9 @@ def test_export_import_roundtrip(monkeypatch, tmp_path):
 
 def test_default_join_expiry_is_30_days_out():
     assert default_join_expiry() == (date.today() + timedelta(days=30)).isoformat()
+
+
+def test_weight_level_maps_old_weights_to_nearest_word():
+    from should_we.ui import _weight_level
+
+    assert [_weight_level(w) for w in range(6)] == [0, 1, 3, 3, 5, 5]
