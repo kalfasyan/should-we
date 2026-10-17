@@ -4,6 +4,7 @@
 .github
 tests
 docs
+!docs/assets/logo.png
 data
 __pycache__
 *.pyc
