@@ -183,6 +183,9 @@ Or with compose (same result, rebuilds as needed):
 docker compose up -d
 ```
 
+**On a Synology NAS:** the same Container Manager + reverse-proxy setup as
+Splitwiz, with a one-command update script. See [docs/nas.md](docs/nas.md).
+
 **Public + mobile (recommended):** the full deploy procedure — HTTPS,
 installable PWA, admin login, expiring join links — is in
 [docs/deploy.md](docs/deploy.md). The live app: `https://should-we.xyz`.
