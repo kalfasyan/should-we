@@ -1,10 +1,7 @@
-.pixi
-.kilo
+**/node_modules
+web/dist
+**/pb_data
 .git
 .github
-tests
+.kilo
 docs
-!docs/assets/logo.png
-data
-__pycache__
-*.pyc

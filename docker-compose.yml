@@ -1,0 +1,15 @@
+# Paste this into Synology Container Manager > Project > Create, or run
+# `docker compose up -d` next to it on any home server.
+# Data lives in ./pb_data next to this file (/volume1/docker/should-we/pb_data on a Synology).
+services:
+  should-we:
+    image: ghcr.io/kalfasyan/should-we:2
+    container_name: should-we
+    restart: always
+    ports:
+      - "127.0.0.1:8091:8090" # only reachable through your reverse proxy
+    volumes:
+      - ./pb_data:/app/pb_data
+    environment:
+      - TZ=Europe/Brussels
+    mem_limit: 128m

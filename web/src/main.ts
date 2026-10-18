@@ -1,0 +1,9 @@
+import { mount } from 'svelte';
+import './app.css';
+import App from './App.svelte';
+
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  navigator.serviceWorker.register('/sw.js');
+}
+
+export default mount(App, { target: document.getElementById('app')! });
