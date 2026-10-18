@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.1.0
+
+- **Start a new decision like this one**: copies the title and what matters,
+  joins you under the same name with the same priorities, and leaves options
+  and ratings empty. Handy for a recurring choice such as job hunting.
+- **Edit what matters** after starting: add or remove points for everyone.
+  Ratings for points that stay are kept; options rated before a new point show
+  "New point to rate".
+- Hide a decision from the "Your decisions" list on the start screen.
+
 ## 2.0.0
 
 A rebuild, with the same stack and deployment as Splitwiz. Not compatible

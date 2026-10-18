@@ -2,6 +2,7 @@
   import { api, type Decision, type Me } from '../lib/api';
   import { LEVELS, levelOf } from '../lib/words';
   import OptionCard from './OptionCard.svelte';
+  import Points from './Points.svelte';
 
   let {
     decision,
@@ -15,7 +16,10 @@
   let tapped = $state<Record<string, number>>({});
   let error = $state('');
 
-  const rated = $derived(decision.options.filter((o) => person?.ratings[o.id]).length);
+  // fully rated: every point on the list, including ones added later
+  const rated = $derived(
+    decision.options.filter((o) => decision.features.every((f) => person?.ratings[o.id]?.[f.key] !== undefined)).length,
+  );
 
   async function setLevel(key: string, value: number) {
     tapped[key] = value;
@@ -25,6 +29,36 @@
       onchange();
     } catch (e) {
       error = (e as Error).message;
+    }
+  }
+
+  // editing the list of points, for everyone
+  let editingPoints = $state(false);
+  let points = $state<string[]>([]);
+  let pointDraft = $state('');
+  let pointsError = $state('');
+  let savingPoints = $state(false);
+  let editor = $state<Points>();
+
+  function editPoints() {
+    points = decision.features.map((f) => f.label);
+    pointDraft = '';
+    pointsError = '';
+    editingPoints = true;
+  }
+
+  async function savePoints() {
+    editor?.addDraft();
+    if (points.length === 0) return (pointsError = 'Keep at least one thing that matters.');
+    savingPoints = true;
+    try {
+      await api.saveFeatures(decision.id, me, points);
+      editingPoints = false;
+      onchange();
+    } catch (e) {
+      pointsError = (e as Error).message;
+    } finally {
+      savingPoints = false;
     }
   }
 
@@ -52,10 +86,28 @@
 </script>
 
 <section class="card flex flex-col gap-4">
-  <div>
-    <h2 class="text-lg font-semibold">1 · What matters to you?</h2>
-    <p class="text-sm text-slate-500">Used for every option. Saved as you tap.</p>
+  <div class="flex items-start justify-between gap-2">
+    <div>
+      <h2 class="text-lg font-semibold">1 · What matters to you?</h2>
+      <p class="text-sm text-slate-500">Used for every option. Saved as you tap.</p>
+    </div>
+    {#if !editingPoints}
+      <button class="shrink-0 text-sm text-brand-600" onclick={editPoints}>Edit list</button>
+    {/if}
   </div>
+  {#if editingPoints}
+    <div class="flex flex-col gap-2 rounded-xl bg-slate-100 p-3 dark:bg-slate-800">
+      <p class="text-sm text-slate-600 dark:text-slate-300">
+        Changes the list for everyone. Ratings for points you keep stay. New points need rating on each option.
+      </p>
+      <Points bind:this={editor} bind:points bind:draft={pointDraft} />
+      {#if pointsError}<p class="text-sm text-red-600">{pointsError}</p>{/if}
+      <div class="flex gap-2">
+        <button class="btn-primary flex-1 py-2" disabled={savingPoints} onclick={savePoints}>{savingPoints ? 'Saving…' : 'Save list'}</button>
+        <button class="btn-secondary px-4 py-2" onclick={() => (editingPoints = false)}>Cancel</button>
+      </div>
+    </div>
+  {/if}
   {#each decision.features as f (f.key)}
     {@const current = tapped[f.key] ?? levelOf(person?.weights[f.key])}
     <div class="flex flex-col gap-2">

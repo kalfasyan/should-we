@@ -32,6 +32,11 @@ Version 2 is a rebuild. The Python version is release
    by their priorities; the option's score is the average over everyone
    who rated it. Big disagreements are marked "opinions split".
 
+Anyone in the decision can edit the list of what matters later. For a choice
+that comes back (job hunting, holidays), use **Start a new decision like this
+one** at the bottom of a decision: it copies the points and your priorities.
+Everything is saved in `pb_data` on your server.
+
 ## How it is built
 
 | Part | Choice |

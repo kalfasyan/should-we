@@ -44,6 +44,7 @@ func registerRoutes(se *core.ServeEvent) {
 	g := se.Router.Group("/api/sw")
 	g.POST("/decisions", createDecision)
 	g.GET("/decisions/{id}", getDecision)
+	g.PUT("/decisions/{id}/features", saveFeatures)
 	g.POST("/decisions/{id}/people", joinDecision)
 	g.PUT("/decisions/{id}/people/{pid}/weights", saveWeights)
 	g.PUT("/decisions/{id}/people/{pid}/ratings/{oid}", saveRating)
@@ -132,6 +133,33 @@ func createDecision(e *core.RequestEvent) error {
 		return e.InternalServerError("", err)
 	}
 	return e.JSON(http.StatusOK, map[string]string{"id": d.Id})
+}
+
+// saveFeatures replaces the list of things that matter. Points that stay keep
+// their key, so everyone's priorities and ratings for them still count.
+func saveFeatures(e *core.RequestEvent) error {
+	d, _, err := loadDecision(e)
+	if err != nil {
+		return err
+	}
+	if _, err := me(e, d.Id, ""); err != nil {
+		return err
+	}
+	var body struct {
+		Features []string `json:"features"`
+	}
+	if err := e.BindBody(&body); err != nil {
+		return e.BadRequestError("", err)
+	}
+	features, err := decide.Features(body.Features)
+	if err != nil {
+		return e.BadRequestError(capitalize(err.Error())+".", nil)
+	}
+	d.Set("features", features)
+	if err := e.App.Save(d); err != nil {
+		return e.InternalServerError("", err)
+	}
+	return e.NoContent(http.StatusNoContent)
 }
 
 func getDecision(e *core.RequestEvent) error {
