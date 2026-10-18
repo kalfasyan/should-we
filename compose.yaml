@@ -1,9 +1,0 @@
-services:
-  should-we:
-    build: .
-    env_file: .env            # prod secrets: SHOULD_WE_ADMINS, SHOULD_WE_STORAGE_SECRET, FORWARDED_ALLOW_IPS
-    ports:
-      - "127.0.0.1:8080:8080" # only reachable via the Caddy reverse proxy
-    volumes:
-      - ./data:/app/data
-    restart: unless-stopped
