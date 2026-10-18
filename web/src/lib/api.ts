@@ -61,6 +61,8 @@ export const api = {
   create: (title: string, features: string[]) =>
     call<{ id: string }>('POST', '/decisions', { title, features }),
   get: (id: string) => call<Decision>('GET', `/decisions/${id}`),
+  saveFeatures: (id: string, me: Me, features: string[]) =>
+    call<void>('PUT', `/decisions/${id}/features`, { features }, me),
   join: (id: string, name: string) => call<Me>('POST', `/decisions/${id}/people`, { name }),
   saveWeights: (id: string, me: Me, weights: Weights) =>
     call<void>('PUT', `/decisions/${id}/people/${me.id}/weights`, weights, me),

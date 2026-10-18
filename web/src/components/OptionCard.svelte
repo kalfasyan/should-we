@@ -16,12 +16,18 @@
   let scores = $state<Scores>(
     Object.fromEntries(decision.features.map((f) => [f.key, saved?.[f.key] ?? 2.5])),
   );
+  // points added to the decision later start in the middle too
+  $effect.pre(() => {
+    for (const f of decision.features) if (scores[f.key] === undefined) scores[f.key] = saved?.[f.key] ?? 2.5;
+  });
   let error = $state('');
   let editingNote = $state(false);
   // svelte-ignore state_referenced_locally
   let noteDraft = $state(option.note);
   let confirmRemove = $state(false);
   const link = $derived(asLink(option.note));
+  // rated before someone added a point to the list
+  const complete = $derived(!!saved && decision.features.every((f) => saved[f.key] !== undefined));
 
   async function save() {
     try {
@@ -70,9 +76,9 @@
         {/if}
       {/if}
     </div>
-    <span class="shrink-0 rounded-full px-2 py-1 text-xs font-medium {saved
+    <span class="shrink-0 rounded-full px-2 py-1 text-xs font-medium {complete
       ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200'
-      : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'}">{saved ? '✓ Rated' : 'Not rated yet'}</span
+      : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'}">{complete ? '✓ Rated' : saved ? 'New point to rate' : 'Not rated yet'}</span
     >
   </div>
 
@@ -80,13 +86,13 @@
     <label class="flex flex-col gap-1">
       <span class="flex justify-between text-sm">
         <span>{f.label}</span>
-        <span class="font-medium {saved ? '' : 'text-slate-400'}">{scores[f.key]} · {ratingWord(scores[f.key])}</span>
+        <span class="font-medium {saved?.[f.key] !== undefined ? '' : 'text-slate-400'}">{scores[f.key]} · {ratingWord(scores[f.key])}</span>
       </span>
       <input type="range" min="0" max="5" step="0.5" bind:value={scores[f.key]} onchange={save} aria-label="{option.name}: {f.label}" />
     </label>
   {/each}
 
-  {#if !saved}
+  {#if !complete}
     <button class="text-left text-sm text-brand-600" onclick={save}>Looks right? Save these ratings</button>
   {/if}
 

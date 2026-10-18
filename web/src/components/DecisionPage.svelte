@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api, ApiError, type Decision, type Me } from '../lib/api';
-  import { getMe, setMe, remember, forget } from '../lib/local';
+  import { getMe, setMe, remember, forget, setTemplate } from '../lib/local';
   import { go } from '../lib/route.svelte';
   import Join from './Join.svelte';
   import Rate from './Rate.svelte';
@@ -52,6 +52,20 @@
     peeking = false;
     tab = 'rate';
     load();
+  }
+
+  // a fresh decision with the same points, and your priorities if you joined
+  function startLikeThis() {
+    if (!data) return;
+    const person = me && data.people.find((p) => p.id === me!.id);
+    setTemplate({
+      from: data.title,
+      title: data.title,
+      points: data.features.map((f) => f.label),
+      name: person?.name,
+      weights: person ? Object.fromEntries(data.features.map((f) => [f.label, person.weights[f.key] ?? 3])) : undefined,
+    });
+    go('/');
   }
 
   async function share() {
@@ -132,5 +146,7 @@
         <button class="btn-primary" onclick={() => (peeking = false)}>Join to rate</button>
       {/if}
     {/if}
+
+    <button class="mt-4 text-sm text-slate-500 underline" onclick={startLikeThis}>Start a new decision like this one</button>
   </div>
 {/if}

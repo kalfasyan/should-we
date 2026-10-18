@@ -41,3 +41,19 @@ export function remember(r: Recent) {
 export function forget(id: string) {
   write('should-we:recent', recents().filter((x) => x.id !== id));
 }
+
+/** A decision to start from: its title, points, and your name and priorities by point label. */
+export type Template = { from: string; title: string; points: string[]; name?: string; weights?: Record<string, number> };
+
+// kept in memory only, for the hop from a decision to the start screen
+let template: Template | null = null;
+
+export function setTemplate(t: Template) {
+  template = t;
+}
+
+export function takeTemplate(): Template | null {
+  const t = template;
+  template = null;
+  return t;
+}
