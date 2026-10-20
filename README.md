@@ -20,6 +20,23 @@ Version 2 is a rebuild. The Python version is release
 [v1.0.0](https://github.com/kalfasyan/should-we/releases/tag/v1.0.0); see
 [CHANGELOG.md](CHANGELOG.md).
 
+## Quickstart
+
+On any machine with Docker (a NAS, a mini PC, your laptop):
+
+```sh
+mkdir should-we && cd should-we
+curl -O https://raw.githubusercontent.com/kalfasyan/should-we/main/docker-compose.yml
+docker compose up -d
+```
+
+Open http://127.0.0.1:8091, type what you're deciding and what matters,
+then tap **Share** and send the link. Everyone picks a name, taps how much
+each point matters, and rates the options. **Results** shows the ranking.
+
+To let friends join from their phones anywhere, put it behind HTTPS (see
+[On a Synology NAS](#on-a-synology-nas)).
+
 ## How it works
 
 1. **Start a decision**: what you're deciding, and what matters (price,
@@ -37,27 +54,9 @@ that comes back (job hunting, holidays), use **Start a new decision like this
 one** at the bottom of a decision: it copies the points and your priorities.
 Everything is saved in `pb_data` on your server.
 
-## How it is built
-
-| Part | Choice |
-| --- | --- |
-| Backend | [PocketBase](https://pocketbase.io) used as a Go framework (`backend/`), SQLite database |
-| Rules and scoring | `backend/decide`, unit tested |
-| API | `backend/app/routes.go`: a decision's id is its share link; your browser keeps a token proving which person you are |
-| Web app | Svelte 5 + Vite + Tailwind (`web/`), installable PWA |
-| Packaging | One Docker image (`Dockerfile`), published to `ghcr.io/kalfasyan/should-we` by GitHub Actions |
-
 ## Run it on a home server
 
-Any machine with Docker:
-
-```sh
-mkdir should-we && cd should-we
-curl -O https://raw.githubusercontent.com/kalfasyan/should-we/main/docker-compose.yml
-docker compose up -d     # http://127.0.0.1:8091
-```
-
-Put it behind your reverse proxy with HTTPS (Caddy, nginx, DSM, …) to
+The [Quickstart](#quickstart) commands are all it takes. Put it behind your reverse proxy with HTTPS (Caddy, nginx, DSM, …) to
 share links outside your home. Data lives in `pb_data/` next to the compose
 file.
 
@@ -70,7 +69,10 @@ file.
    [`docker-compose.yml`](docker-compose.yml). Start it.
 4. **Certificate**: Control Panel > Security > Certificate > Add > Let's
    Encrypt, for `should-we.<your-name>.synology.me` (your Synology DDNS
-   name with `should-we.` in front).
+   name with `should-we.` in front). If you already have a certificate
+   for `<your-name>.synology.me` with "Include wildcard" ticked, it covers
+   this too. No router changes are needed when port 443 already reaches
+   the NAS (for example for Splitwiz).
 5. **Reverse proxy**: Control Panel > Login Portal > Advanced > Reverse
    Proxy > Create. Source: HTTPS, `should-we.<your-name>.synology.me`,
    port 443. Destination: HTTP, `localhost`, port 8091. Then assign the
@@ -88,7 +90,7 @@ and push straight to the NAS:
 scripts/deploy-to-nas.sh you@your-nas-address
 ```
 
-Images: `:2` follows the latest 2.x, `:2.0.0` is that exact release.
+Images: `:2` follows the latest 2.x, `:2.1.0` is that exact release.
 
 ### Backups
 
@@ -117,6 +119,16 @@ Tests: `cd backend && go test ./...` and `cd web && npm test && npm run check`.
 Bump `version` in `web/package.json`, add a CHANGELOG entry, merge, then
 publish a GitHub release tagged `vX.Y.Z`. CI publishes the matching image
 tags.
+
+## How it is built
+
+| Part | Choice |
+| --- | --- |
+| Backend | [PocketBase](https://pocketbase.io) used as a Go framework (`backend/`), SQLite database |
+| Rules and scoring | `backend/decide`, unit tested |
+| API | `backend/app/routes.go`: a decision's id is its share link; your browser keeps a token proving which person you are |
+| Web app | Svelte 5 + Vite + Tailwind (`web/`), installable PWA |
+| Packaging | One Docker image (`Dockerfile`), published to `ghcr.io/kalfasyan/should-we` by GitHub Actions |
 
 ## License
 
