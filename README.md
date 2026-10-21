@@ -130,6 +130,11 @@ tags.
 | Web app | Svelte 5 + Vite + Tailwind (`web/`), installable PWA |
 | Packaging | One Docker image (`Dockerfile`), published to `ghcr.io/kalfasyan/should-we` by GitHub Actions |
 
+## Support
+
+If should-we helps you decide, you can
+[buy me a coffee](https://buymeacoffee.com/kalfasyan) ☕
+
 ## License
 
 [MIT](LICENSE)

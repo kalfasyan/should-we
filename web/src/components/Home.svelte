@@ -108,5 +108,8 @@
     </section>
   {/if}
 
-  <footer class="mt-auto text-center text-xs text-slate-400">should-we v{__APP_VERSION__}</footer>
+  <footer class="mt-auto text-center text-xs text-slate-400">
+    should-we v{__APP_VERSION__} ·
+    <a href="https://buymeacoffee.com/kalfasyan" target="_blank" rel="noopener noreferrer" class="underline">Buy me a coffee</a>
+  </footer>
 </main>
