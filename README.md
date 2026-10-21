@@ -118,6 +118,10 @@ Bump `version` in `web/package.json`, add a CHANGELOG entry, merge, then
 publish a GitHub release tagged `vX.Y.Z`. CI publishes the matching image
 tags.
 
+## Support
+
+If should-we is useful to you, you can [buy me a coffee](https://buymeacoffee.com/kalfasyan) ☕
+
 ## License
 
 [MIT](LICENSE)
