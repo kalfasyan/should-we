@@ -16,10 +16,10 @@ priorities and combines everyone into one ranking.
 - **Phone first.** Installable as an app ("Add to Home Screen"), saves as
   you tap, refreshes every few seconds.
 - **Self-hosted.** One small Docker image with no settings, run the same way
-  as [Splitwiz](https://github.com/kalfasyan/splitwiz).
+  as [Splitwiz](https://github.com/selfhostit/splitwiz).
 
 Version 2 is a rebuild. The Python version is release
-[v1.0.0](https://github.com/kalfasyan/should-we/releases/tag/v1.0.0); see
+[v1.0.0](https://github.com/selfhostit/should-we/releases/tag/v1.0.0); see
 [CHANGELOG.md](CHANGELOG.md).
 
 ## Quickstart
@@ -28,7 +28,7 @@ On any machine with Docker (a NAS, a mini PC, your laptop):
 
 ```sh
 mkdir should-we && cd should-we
-curl -O https://raw.githubusercontent.com/kalfasyan/should-we/main/docker-compose.yml
+curl -O https://raw.githubusercontent.com/selfhostit/should-we/main/docker-compose.yml
 docker compose up -d
 ```
 
@@ -130,7 +130,7 @@ tags.
 | Rules and scoring | `backend/decide`, unit tested |
 | API | `backend/app/routes.go`: a decision's id is its share link; your browser keeps a token proving which person you are |
 | Web app | Svelte 5 + Vite + Tailwind (`web/`), installable PWA |
-| Packaging | One Docker image (`Dockerfile`), published to `ghcr.io/kalfasyan/should-we` by GitHub Actions |
+| Packaging | One Docker image (`Dockerfile`), published to `ghcr.io/selfhostit/should-we` by GitHub Actions |
 
 ## Support
 
