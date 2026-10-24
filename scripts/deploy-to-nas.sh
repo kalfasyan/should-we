@@ -8,7 +8,7 @@
 set -e
 TARGET=${1:?usage: $0 user@nas-address}
 DIR=/volume1/docker/should-we
-IMAGE=ghcr.io/kalfasyan/should-we:2
+IMAGE=ghcr.io/selfhostit/should-we:2
 
 cd "$(dirname "$0")/.."
 docker build --platform linux/amd64 -t "$IMAGE" .

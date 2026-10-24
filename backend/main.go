@@ -10,8 +10,8 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 
-	"github.com/kalfasyan/should-we/app"
-	_ "github.com/kalfasyan/should-we/migrations"
+	"github.com/selfhostit/should-we/app"
+	_ "github.com/selfhostit/should-we/migrations"
 )
 
 func main() {

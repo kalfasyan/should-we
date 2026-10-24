@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- The project moved to the [selfhostit](https://github.com/selfhostit)
+  organization. New images are published as `ghcr.io/selfhostit/should-we`;
+  update the `image:` line in your `docker-compose.yml`.
+
 ## 2.1.0
 
 - **Start a new decision like this one**: copies the title and what matters,

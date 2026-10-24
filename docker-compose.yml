@@ -3,7 +3,7 @@
 # Data lives in ./pb_data next to this file (/volume1/docker/should-we/pb_data on a Synology).
 services:
   should-we:
-    image: ghcr.io/kalfasyan/should-we:2
+    image: ghcr.io/selfhostit/should-we:2
     container_name: should-we
     restart: always
     ports:

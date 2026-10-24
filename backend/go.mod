@@ -1,4 +1,4 @@
-module github.com/kalfasyan/should-we
+module github.com/selfhostit/should-we
 
 go 1.27
 

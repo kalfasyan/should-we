@@ -10,7 +10,7 @@ import (
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 
-	"github.com/kalfasyan/should-we/decide"
+	"github.com/selfhostit/should-we/decide"
 )
 
 // A decision's id is its share link: anyone who has it can join, rate and see
